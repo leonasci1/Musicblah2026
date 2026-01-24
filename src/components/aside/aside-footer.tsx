@@ -1,12 +1,9 @@
 const footerLinks = [
-  ['Terms of Service', 'https://twitter.com/tos'],
-  ['Privacy Policy', 'https://twitter.com/privacy'],
-  ['Cookie Policy', 'https://support.twitter.com/articles/20170514'],
-  ['Accessibility', 'https://help.twitter.com/resources/accessibility'],
-  [
-    'Ads Info',
-    'https://business.twitter.com/en/help/troubleshooting/how-twitter-ads-work.html'
-  ]
+  ['Terms of Service', '/tos'],
+  ['Privacy Policy', '/privacy'],
+  ['Cookie Policy', '/cookies'],
+  ['Accessibility', '/accessibility'],
+  ['Ads Info', '/ads']
 ] as const;
 
 export function AsideFooter(): JSX.Element {
@@ -28,7 +25,7 @@ export function AsideFooter(): JSX.Element {
           </a>
         ))}
       </nav>
-      <p>© 2022 Twitter, Inc.</p>
+      <p>© 2026 MusicBlah, Inc.</p>
     </footer>
   );
 }

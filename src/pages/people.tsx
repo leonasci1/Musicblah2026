@@ -15,8 +15,14 @@ import { MainContainer } from '@components/home/main-container';
 import { UserCard } from '@components/user/user-card';
 import { Loading } from '@components/ui/loading';
 import { Error } from '@components/ui/error';
-import { variants } from '@components/aside/aside-trends';
+// REMOVIDO: import { variants } from '@components/aside/aside-trends';
 import type { ReactElement, ReactNode } from 'react';
+
+// ADICIONADO: Definimos a animação aqui localmente
+const variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.8 } }
+};
 
 export default function People(): JSX.Element {
   const { user } = useAuth();
@@ -32,7 +38,7 @@ export default function People(): JSX.Element {
 
   return (
     <MainContainer>
-      <SEO title='People / Twitter' />
+      <SEO title='People / MusicBlah' />
       <MainHeader useActionButton title='People' action={back} />
       <section>
         {loading ? (

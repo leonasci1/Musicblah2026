@@ -30,7 +30,7 @@ export function SidebarProfile(): JSX.Element {
         <ActionModal
           useIcon
           focusOnMainBtn
-          title='Log out of Twitter?'
+          title='Log out of MusicBlah?'
           description='You can always log back in at any time. If you just want to switch accounts, you can do that by adding an existing account.'
           mainBtnLabel='Log out'
           action={signOut}
@@ -48,15 +48,26 @@ export function SidebarProfile(): JSX.Element {
                 open && 'bg-light-primary/10 dark:bg-dark-primary/10'
               )}
             >
-              <div className='flex gap-3 truncate'>
-                <UserAvatar src={photoURL} alt={name} size={40} />
+              {/* ✨ AJUSTADO: Adicionado items-center e removido truncate do pai */}
+              <div className='flex min-w-0 items-center gap-3'>
+                {/* ✨ AJUSTADO: Adicionado shrink-0 para a foto não encolher */}
+                <UserAvatar
+                  src={photoURL}
+                  alt={name}
+                  size={40}
+                  className='shrink-0'
+                />
                 <div className='hidden truncate text-start leading-5 xl:block'>
-                  <UserName name={name} className='start' verified={verified} />
+                  <UserName
+                    name={name}
+                    className='text-start'
+                    verified={verified}
+                  />
                   <UserUsername username={username} disableLink />
                 </div>
               </div>
               <HeroIcon
-                className='hidden h-6 w-6 xl:block'
+                className='hidden h-6 w-6 shrink-0 xl:block'
                 iconName='EllipsisHorizontalIcon'
               />
             </Menu.Button>
@@ -74,8 +85,13 @@ export function SidebarProfile(): JSX.Element {
                     as='div'
                     disabled
                   >
-                    <div className='flex items-center gap-3 truncate'>
-                      <UserAvatar src={photoURL} alt={name} />
+                    <div className='flex items-center gap-3'>
+                      <UserAvatar
+                        src={photoURL}
+                        alt={name}
+                        size={40}
+                        className='shrink-0'
+                      />
                       <div className='truncate'>
                         <UserName name={name} verified={verified} />
                         <UserUsername username={username} disableLink />

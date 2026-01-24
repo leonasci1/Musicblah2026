@@ -39,16 +39,32 @@ export function UserEditProfile({ hide }: UserEditProfileProps): JSX.Element {
 
   const [loading, setLoading] = useState(false);
 
-  const { bio, name, website, location, photoURL, coverPhotoURL } =
-    user as User;
+  // 1. Recuperar dados atuais do usuário, incluindo os novos campos musicais
+  const {
+    bio,
+    name,
+    website,
+    location,
+    photoURL,
+    coverPhotoURL,
+    favoriteArtist,
+    musicGenres,
+    favoriteAlbum,
+    favoriteTrack
+  } = user as User;
 
+  // 2. Inicializar o estado com os campos existentes e os novos
   const [editUserData, setEditUserData] = useState<EditableUserData>({
     bio,
     name,
     website,
     photoURL,
     location,
-    coverPhotoURL
+    coverPhotoURL,
+    favoriteArtist: favoriteArtist ?? '',
+    musicGenres: musicGenres ?? '',
+    favoriteAlbum: favoriteAlbum ?? '',
+    favoriteTrack: favoriteTrack ?? ''
   });
 
   const [userImages, setUserImages] = useState<UserImages>({
@@ -82,11 +98,16 @@ export function UserEditProfile({ hide }: UserEditProfileProps): JSX.Element {
       ...(newPhotoURL && { photoURL: newPhotoURL[0].src })
     };
 
+    // 3. Adicionar as chaves dos novos campos na lista de dados a serem salvos
     const trimmedKeys: Readonly<EditableData[]> = [
       'name',
       'bio',
       'location',
-      'website'
+      'website',
+      'favoriteArtist',
+      'musicGenres',
+      'favoriteAlbum',
+      'favoriteTrack'
     ];
 
     const trimmedTexts = trimmedKeys.reduce(
@@ -111,7 +132,7 @@ export function UserEditProfile({ hide }: UserEditProfileProps): JSX.Element {
     setLoading(false);
     setEditUserData(newUserData);
 
-    toast.success('Profile updated successfully');
+    toast.success('Perfil atualizado com sucesso!');
   };
 
   const editImage =
@@ -177,7 +198,12 @@ export function UserEditProfile({ hide }: UserEditProfileProps): JSX.Element {
       website,
       photoURL,
       location,
-      coverPhotoURL
+      coverPhotoURL,
+      // 4. Resetar também os campos musicais
+      favoriteArtist,
+      musicGenres,
+      favoriteAlbum,
+      favoriteTrack
     });
 
   const handleChange =
@@ -198,6 +224,7 @@ export function UserEditProfile({ hide }: UserEditProfileProps): JSX.Element {
     }
   };
 
+  // 5. Configurar os inputs visuais para o formulário
   const inputFields: Readonly<RequiredInputFieldProps[]> = [
     {
       label: 'Name',
@@ -224,6 +251,32 @@ export function UserEditProfile({ hide }: UserEditProfileProps): JSX.Element {
       inputId: 'website',
       inputValue: editUserData.website,
       inputLimit: 100
+    },
+    // --- Campos Musicais Novos ---
+    // ADICIONADO '?? null' PARA CORRIGIR O ERRO DE TIPO
+    {
+      label: 'Artista Favorito',
+      inputId: 'favoriteArtist',
+      inputValue: editUserData.favoriteArtist ?? null,
+      inputLimit: 50
+    },
+    {
+      label: 'Gêneros (ex: Rock, Pop)',
+      inputId: 'musicGenres',
+      inputValue: editUserData.musicGenres ?? null,
+      inputLimit: 100
+    },
+    {
+      label: 'Álbum Top 1',
+      inputId: 'favoriteAlbum',
+      inputValue: editUserData.favoriteAlbum ?? null,
+      inputLimit: 50
+    },
+    {
+      label: 'Música no Repeat',
+      inputId: 'favoriteTrack',
+      inputValue: editUserData.favoriteTrack ?? null,
+      inputLimit: 50
     }
   ];
 

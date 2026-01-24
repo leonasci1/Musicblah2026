@@ -36,7 +36,7 @@ const topNavLinks: Readonly<MobileNavLink[]> = [
   },
   {
     href: '/people',
-    linkName: 'Twitter Circle',
+    linkName: 'MusicBlah Circle',
     iconName: 'UserGroupIcon'
   }
 ];
@@ -120,7 +120,7 @@ export function MobileSidebarModal({
         <ActionModal
           useIcon
           focusOnMainBtn
-          title='Log out of Twitter?'
+          title='Log out of MusicBlah?'
           description='You can always log back in at any time. If you just want to switch accounts, you can do that by adding an existing account.'
           mainBtnLabel='Log out'
           action={signOut}
@@ -136,7 +136,7 @@ export function MobileSidebarModal({
         action={closeModal}
       />
       <section className='mt-0.5 flex flex-col gap-2 px-4'>
-        <Link href={userLink}>
+        <Link href={userLink ?? '#'}>
           <a className='blur-picture relative h-20 rounded-md'>
             {coverPhotoURL ? (
               <NextImage
@@ -174,7 +174,7 @@ export function MobileSidebarModal({
           </div>
           <div className='text-secondary flex gap-4'>
             {allStats.map(([id, label, stat]) => (
-              <Link href={`${userLink}/${id}`} key={id}>
+              <Link href={`${userLink ?? '#'}/${id}`} key={id}>
                 <a
                   className='hover-animation flex h-4 items-center gap-1 border-b border-b-transparent 
                              outline-none hover:border-b-light-primary focus-visible:border-b-light-primary

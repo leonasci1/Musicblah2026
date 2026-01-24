@@ -21,7 +21,7 @@ export function SidebarLink({
   const isActive = username ? asPath.includes(username) : asPath === href;
 
   return (
-    <Link href={href}>
+    <Link href={href ?? '#'}>
       <a
         className={cn(
           'group py-1 outline-none',

@@ -161,7 +161,7 @@ export function TweetActions({
             isInAdminControl ? `@${username}'s` : 'your'
           } profile, the timeline of any accounts that follow ${
             isInAdminControl ? `@${username}` : 'you'
-          }, and from Twitter search results.`}
+          }, and from MusicBlah search results.`}
           mainBtnClassName='bg-accent-red hover:bg-accent-red/90 active:bg-accent-red/75 accent-tab
                             focus-visible:bg-accent-red/90'
           mainBtnLabel='Delete'
@@ -191,15 +191,15 @@ export function TweetActions({
               as={Button}
               className={cn(
                 `main-tab group group absolute top-2 right-2 p-2 
-                 hover:bg-accent-blue/10 focus-visible:bg-accent-blue/10
-                 focus-visible:!ring-accent-blue/80 active:bg-accent-blue/20`,
-                open && 'bg-accent-blue/10 [&>div>svg]:text-accent-blue'
+                   hover:bg-accent-cyan/10 focus-visible:bg-accent-cyan/10
+                   focus-visible:!ring-accent-cyan/80 active:bg-accent-cyan/20`,
+                open && 'bg-accent-cyan/10 [&>div>svg]:text-accent-cyan'
               )}
             >
               <div className='group relative'>
                 <HeroIcon
-                  className='h-5 w-5 text-light-secondary group-hover:text-accent-blue
-                             group-focus-visible:text-accent-blue dark:text-dark-secondary/80'
+                  className='h-5 w-5 text-light-secondary group-hover:text-accent-cyan
+                             group-focus-visible:text-accent-cyan dark:text-dark-secondary/80'
                   iconName='EllipsisHorizontalIcon'
                 />
                 {!open && <ToolTip tip='More' />}

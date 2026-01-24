@@ -5,6 +5,8 @@ import { useModal } from '@lib/hooks/useModal';
 import { Modal } from '@components/modal/modal';
 import { Input } from '@components/input/input';
 import { CustomIcon } from '@components/ui/custom-icon';
+import { NextImage } from '@components/ui/next-image';
+import { BrandLogo } from '@components/common/brand-logo';
 import { Button } from '@components/ui/button';
 import { SidebarLink } from './sidebar-link';
 import { MoreSettings } from './more-settings';
@@ -29,8 +31,8 @@ const navLinks: Readonly<NavLink[]> = [
     href: '/explore',
     linkName: 'Explore',
     iconName: 'HashtagIcon',
-    disabled: true,
-    canBeHidden: true
+    disabled: false,
+    canBeHidden: false
   },
   {
     href: '/notifications',
@@ -90,11 +92,11 @@ export function Sidebar(): JSX.Element {
           <h1 className='hidden xs:flex'>
             <Link href='/home'>
               <a
-                className='custom-button main-tab text-accent-blue transition hover:bg-light-primary/10 
-                           focus-visible:bg-accent-blue/10 focus-visible:!ring-accent-blue/80
+                className='custom-button main-tab text-accent-purple transition hover:bg-light-primary/10 
+                           focus-visible:bg-accent-purple/10 focus-visible:!ring-accent-purple/80
                            dark:text-twitter-icon dark:hover:bg-dark-primary/10'
               >
-                <CustomIcon className='h-7 w-7' iconName='TwitterIcon' />
+                <BrandLogo width={28} height={28} />
               </a>
             </Link>
           </h1>
@@ -116,11 +118,10 @@ export function Sidebar(): JSX.Element {
                        xs:hover:bg-main-accent/90 xs:active:bg-main-accent/75 xl:w-11/12'
             onClick={openModal}
           >
-            <CustomIcon
-              className='block h-6 w-6 xl:hidden'
-              iconName='FeatherIcon'
-            />
-            <p className='hidden xl:block'>Tweet</p>
+            <div className='block h-6 w-6 xl:hidden'>
+              <BrandLogo width={24} height={24} />
+            </div>
+            <p className='hidden xl:block'>Post</p>
           </Button>
         </section>
         {!isMobile && <SidebarProfile />}

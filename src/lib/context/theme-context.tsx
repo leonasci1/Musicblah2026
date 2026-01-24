@@ -29,11 +29,11 @@ function setInitialTheme(): Theme {
 }
 
 function setInitialAccent(): Accent {
-  if (typeof window === 'undefined') return 'blue';
+  if (typeof window === 'undefined') return 'purple';
 
   const savedAccent = localStorage.getItem('accent') as Accent | null;
 
-  return savedAccent ?? 'blue';
+  return savedAccent ?? 'purple';
 }
 
 export function ThemeContextProvider({

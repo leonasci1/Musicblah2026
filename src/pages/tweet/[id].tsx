@@ -46,16 +46,16 @@ export default function TweetId(): JSX.Element {
   const parentId = tweetData?.parent?.id;
 
   const pageTitle = tweetData
-    ? `${tweetData.user.name} on Twitter: "${text ?? ''}${
+    ? `${tweetData.user.name} on MusicBlah: "${text ?? ''}${
         images ? ` (${imagesLength} image${isPlural(imagesLength)})` : ''
-      }" / Twitter`
+      }" / MusicBlah`
     : null;
 
   return (
     <MainContainer className='!pb-[1280px]'>
       <MainHeader
         useActionButton
-        title={parentId ? 'Thread' : 'Tweet'}
+        title={parentId ? 'Thread' : 'Postar'}
         action={back}
       />
       <section>
@@ -63,8 +63,8 @@ export default function TweetId(): JSX.Element {
           <Loading className='mt-5' />
         ) : !tweetData ? (
           <>
-            <SEO title='Tweet not found / Twitter' />
-            <Error message='Tweet not found' />
+            <SEO title='Post not found' />
+            <Error message='Post not found' />
           </>
         ) : (
           <>

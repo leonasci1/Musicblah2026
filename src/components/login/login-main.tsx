@@ -1,7 +1,8 @@
 import { useAuth } from '@lib/context/auth-context';
 import { NextImage } from '@components/ui/next-image';
-import { CustomIcon } from '@components/ui/custom-icon';
+import { BrandLogo } from '@components/common/brand-logo';
 import { Button } from '@components/ui/button';
+import { CustomIcon } from '@components/ui/custom-icon';
 
 export function LoginMain(): JSX.Element {
   const { signInWithGoogle } = useAuth();
@@ -12,21 +13,19 @@ export function LoginMain(): JSX.Element {
         <NextImage
           imgClassName='object-cover'
           blurClassName='bg-accent-blue'
-          src='/assets/twitter-banner.png'
-          alt='Twitter banner'
+          // CORREÇÃO: Nome do arquivo simplificado (sem acentos/espaços)
+          src='/assets/logo-purple.png'
+          alt='MusicBlah banner'
           layout='fill'
           useSkeleton
         />
         <i className='absolute'>
-          <CustomIcon className='h-96 w-96 text-white' iconName='TwitterIcon' />
+          <BrandLogo width={384} height={384} />
         </i>
       </div>
       <div className='flex flex-col items-center justify-between gap-6 p-8 lg:items-start lg:justify-center'>
         <i className='mb-0 self-center lg:mb-10 lg:self-auto'>
-          <CustomIcon
-            className='-mt-4 h-6 w-6 text-accent-blue lg:h-12 lg:w-12 dark:lg:text-twitter-icon'
-            iconName='TwitterIcon'
-          />
+          <BrandLogo width={48} height={48} className='-mt-4 lg:h-12 lg:w-12' />
         </i>
         <div className='flex max-w-xs flex-col gap-4 font-twitter-chirp-extended lg:max-w-none lg:gap-16'>
           <h1
@@ -34,7 +33,7 @@ export function LoginMain(): JSX.Element {
                        lg:text-6xl lg:before:content-["Happening_now"]'
           />
           <h2 className='hidden text-xl lg:block lg:text-3xl'>
-            Join Twitter today.
+            Join MusicBlah today.
           </h2>
         </div>
         <div className='flex max-w-xs flex-col gap-6 [&_button]:py-2'>
@@ -70,27 +69,15 @@ export function LoginMain(): JSX.Element {
                          text-light-secondary inner:text-accent-blue dark:text-dark-secondary'
             >
               By signing up, you agree to the{' '}
-              <a
-                href='https://twitter.com/tos'
-                target='_blank'
-                rel='noreferrer'
-              >
+              <a href='/tos' target='_blank' rel='noreferrer'>
                 Terms of Service
               </a>{' '}
               and{' '}
-              <a
-                href='https://twitter.com/privacy'
-                target='_blank'
-                rel='noreferrer'
-              >
+              <a href='/privacy' target='_blank' rel='noreferrer'>
                 Privacy Policy
               </a>
               , including{' '}
-              <a
-                href='https://help.twitter.com/rules-and-policies/twitter-cookies'
-                target='_blank'
-                rel='noreferrer'
-              >
+              <a href='/cookies' target='_blank' rel='noreferrer'>
                 Cookie Use
               </a>
               .

@@ -64,7 +64,7 @@ export function UserHeader(): JSX.Element {
       ) : (
         <motion.div className='-mb-1 truncate' {...variants} key='found'>
           <UserName
-            tag='h2'
+            // CORREÇÃO: Removi a prop "tag" que causava o erro
             name={user.name}
             className='-mt-1 text-xl'
             iconClassName='w-6 h-6'
@@ -75,8 +75,8 @@ export function UserHeader(): JSX.Element {
               ? `@${user.username}`
               : isInTweetPage
               ? totalTweets
-                ? `${totalTweets} ${`Tweet${isPlural(totalTweets)}`}`
-                : 'No Tweet'
+                ? `${totalTweets} ${`Post${isPlural(totalTweets)}`}`
+                : 'No Posts'
               : currentPage === 'media'
               ? totalPhotos
                 ? `${totalPhotos} Photo${isPlural(totalPhotos)} & GIF${isPlural(

@@ -12,8 +12,9 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        'twitter-chirp': ['TwitterChirp', 'sans-serif'],
-        'twitter-chirp-extended': ['TwitterChirpExtendedHeavy', 'sans-serif']
+        sans: ['Outfit', ...defaultTheme.fontFamily.sans],
+        'twitter-chirp': ['Outfit', 'sans-serif'],
+        'twitter-chirp-extended': ['Outfit', 'sans-serif']
       },
       // prettier-ignore
       colors: {
@@ -29,6 +30,7 @@ module.exports = {
         'accent-purple': 'rgb(var(--accent-purple) / <alpha-value>)',
         'accent-orange': 'rgb(var(--accent-orange) / <alpha-value>)',
         'accent-green': 'rgb(var(--accent-green) / <alpha-value>)',
+        'accent-cyan': 'rgb(var(--accent-cyan) / <alpha-value>)',
         'accent-red': '#F4212E',
         'dark-primary': '#E7E9EA',
         'dark-secondary': '#71767B',

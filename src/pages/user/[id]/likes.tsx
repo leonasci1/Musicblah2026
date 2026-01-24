@@ -30,16 +30,17 @@ export default function UserLikes(): JSX.Element {
   return (
     <section>
       <SEO
-        title={`Tweets liked by ${name as string} (@${
+        title={`Posts curtidos por ${name as string} (@${
           username as string
-        }) / Twitter`}
+        }) / MusicBlah`}
       />
       {loading ? (
         <Loading className='mt-5' />
       ) : !data ? (
         <StatsEmpty
-          title={`@${username as string} hasn't liked any Tweets`}
-          description='When they do, those Tweets will show up here.'
+          title={`@${username as string} ainda não curtiu nada`}
+          description='Os posts que ele curtir aparecerão aqui.'
+          imageData={{ src: '/assets/no-likes.png', alt: 'No likes' }}
         />
       ) : (
         <AnimatePresence mode='popLayout'>

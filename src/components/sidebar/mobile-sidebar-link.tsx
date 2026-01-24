@@ -16,7 +16,7 @@ export function MobileSidebarLink({
   disabled
 }: MobileSidebarLinkProps): JSX.Element {
   return (
-    <Link href={href} key={href}>
+    <Link href={href ?? '#'} key={href}>
       <a
         className={cn(
           `custom-button accent-tab accent-bg-tab flex items-center rounded-md font-bold 

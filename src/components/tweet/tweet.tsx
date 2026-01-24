@@ -15,6 +15,7 @@ import { TweetActions } from './tweet-actions';
 import { TweetStatus } from './tweet-status';
 import { TweetStats } from './tweet-stats';
 import { TweetDate } from './tweet-date';
+import { TweetReview } from './tweet-review';
 import type { Variants } from 'framer-motion';
 import type { Tweet } from '@lib/types/tweet';
 import type { User } from '@lib/types/user';
@@ -48,29 +49,112 @@ export function Tweet(tweet: TweetProps): JSX.Element {
     parentTweet,
     userReplies,
     userRetweets,
-    user: tweetUserData
+    user: tweetUserData,
+    type = 'tweet',
+    rating,
+    album
   } = tweet;
 
-  const { id: ownerId, name, username, verified, photoURL } = tweetUserData;
-
-  const { user } = useAuth();
-
-  const { open, openModal, closeModal } = useModal();
+  if (!tweetId) return <></>;
 
   const tweetLink = `/tweet/${tweetId}`;
-
+  const { user } = useAuth();
+  const { open, openModal, closeModal } = useModal();
   const userId = user?.id as string;
-
   const isOwner = userId === createdBy;
 
-  const { id: parentId, username: parentUsername = username } = parent ?? {};
+  // =====================================================================================
+  //  LAYOUT DE REVIEW (MÚSICA) - CORRIGIDO PARA NÃO QUEBRAR
+  // =====================================================================================
+  if (type === 'review' && album && rating) {
+    return (
+      <motion.article
+        {...(!modal ? { ...variants, layout: 'position' } : {})}
+        animate={{
+          ...variants.animate,
+          ...(parentTweet && { transition: { duration: 0.2 } })
+        }}
+        className='border-b border-light-border dark:border-dark-border'
+      >
+        <Link href={tweetLink} scroll={!parent}>
+          <a className='accent-tab hover-card relative flex flex-col gap-y-4 px-4 py-3 outline-none duration-200'>
+            <div className='grid grid-cols-[auto,1fr] gap-x-3'>
+              {/* Coluna do Avatar */}
+              <div className='flex flex-col items-center'>
+                <UserTooltip {...tweetUserData}>
+                  <UserAvatar
+                    src={tweetUserData.photoURL}
+                    alt={tweetUserData.name}
+                    username={tweetUserData.username}
+                    className='h-12 w-12'
+                    disableLink
+                  />
+                </UserTooltip>
+              </div>
 
+              {/* Coluna do Conteúdo */}
+              <div className='flex min-w-0 flex-col'>
+                <div className='flex items-start justify-between'>
+                  <div className='flex gap-1 truncate'>
+                    <UserName
+                      name={tweetUserData.name}
+                      username={tweetUserData.username}
+                      verified={tweetUserData.verified}
+                      disableLink
+                    />
+                    <UserUsername
+                      username={tweetUserData.username}
+                      disableLink
+                    />
+                    <TweetDate tweetLink={tweetLink} createdAt={createdAt} />
+                  </div>
+                  <div className='translate-x-2'>
+                    <TweetActions
+                      isOwner={isOwner}
+                      ownerId={tweetUserData.id}
+                      tweetId={tweetId}
+                      createdBy={createdBy}
+                      username={tweetUserData.username}
+                      parentId={parent?.id}
+                      hasImages={!!images}
+                    />
+                  </div>
+                </div>
+
+                {/* Review da Música alinhado com o conteúdo */}
+                <div className='mt-2'>
+                  <TweetReview tweet={tweet} />
+                </div>
+              </div>
+            </div>
+
+            <div className='sm:ml-12'>
+              <TweetStats
+                reply={!!parent}
+                userId={userId}
+                isOwner={isOwner}
+                tweetId={tweetId}
+                userLikes={userLikes}
+                userReplies={userReplies}
+                userRetweets={userRetweets}
+              />
+            </div>
+          </a>
+        </Link>
+      </motion.article>
+    );
+  }
+
+  // =====================================================================================
+  //  LAYOUT PADRÃO (TWEET)
+  // =====================================================================================
+  const { id: ownerId, name, username, verified, photoURL } = tweetUserData;
+  const { id: parentId, username: parentUsername = username } = parent ?? {};
   const {
     id: profileId,
     name: profileName,
     username: profileUsername
   } = profile ?? {};
-
   const reply = !!parent;
   const tweetIsRetweeted = userRetweets.includes(profileId ?? '');
 
@@ -93,8 +177,7 @@ export function Tweet(tweet: TweetProps): JSX.Element {
       <Link href={tweetLink} scroll={!reply}>
         <a
           className={cn(
-            `accent-tab hover-card relative flex flex-col 
-             gap-y-4 px-4 py-3 outline-none duration-200`,
+            `accent-tab hover-card relative flex flex-col gap-y-4 px-4 py-3 outline-none duration-200`,
             parentTweet
               ? 'mt-0.5 pt-2.5 pb-0'
               : 'border-b border-light-border dark:border-dark-border'
@@ -109,9 +192,10 @@ export function Tweet(tweet: TweetProps): JSX.Element {
                   <p className='text-sm font-bold'>Pinned Tweet</p>
                 </TweetStatus>
               ) : (
-                tweetIsRetweeted && (
+                tweetIsRetweeted &&
+                profileUsername && (
                   <TweetStatus type='tweet'>
-                    <Link href={profileUsername as string}>
+                    <Link href={`/user/${profileUsername}`}>
                       <a className='custom-underline truncate text-sm font-bold'>
                         {userId === profileId ? 'You' : profileName} Retweeted
                       </a>
@@ -136,7 +220,7 @@ export function Tweet(tweet: TweetProps): JSX.Element {
                       name={name}
                       username={username}
                       verified={verified}
-                      className='text-light-primary dark:text-dark-primary'
+                      className='font-bold text-light-primary dark:text-dark-primary'
                     />
                   </UserTooltip>
                   <UserTooltip modal={modal} {...tweetUserData}>
@@ -166,11 +250,15 @@ export function Tweet(tweet: TweetProps): JSX.Element {
                   )}
                 >
                   Replying to{' '}
-                  <Link href={`/user/${parentUsername}`}>
-                    <a className='custom-underline text-main-accent'>
-                      @{parentUsername}
-                    </a>
-                  </Link>
+                  {parentUsername ? (
+                    <Link href={`/user/${parentUsername}`}>
+                      <a className='custom-underline text-main-accent'>
+                        @{parentUsername}
+                      </a>
+                    </Link>
+                  ) : (
+                    <span className='text-main-accent'>@...</span>
+                  )}
                 </p>
               )}
               {text && (

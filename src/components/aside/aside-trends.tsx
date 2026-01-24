@@ -1,98 +1,175 @@
 import Link from 'next/link';
-import cn from 'clsx';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { formatNumber } from '@lib/date';
-import { preventBubbling } from '@lib/utils';
-import { useTrends } from '@lib/api/trends';
-import { Error } from '@components/ui/error';
 import { HeroIcon } from '@components/ui/hero-icon';
-import { Button } from '@components/ui/button';
-import { ToolTip } from '@components/ui/tooltip';
 import { Loading } from '@components/ui/loading';
-import type { MotionProps } from 'framer-motion';
+// Importamos como ErrorMessage para não conflitar
+import { Error as ErrorMessage } from '@components/ui/error';
 
-export const variants: MotionProps = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  transition: { duration: 0.8 }
+// Definindo o tipo dos dados que vêm da API
+type Track = {
+  id: string;
+  name: string;
+  artist: string;
+  image: string;
+  url: string;
+  previewUrl: string | null;
 };
 
-type AsideTrendsProps = {
-  inTrendsPage?: boolean;
-};
+export function AsideTrends(): JSX.Element {
+  const [trends, setTrends] = useState<Track[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-export function AsideTrends({ inTrendsPage }: AsideTrendsProps): JSX.Element {
-  const { data, loading } = useTrends(1, inTrendsPage ? 100 : 10, {
-    refreshInterval: 30000
-  });
+  // Estado para controlar qual música está tocando
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const { trends, location } = data ?? {};
+  useEffect(() => {
+    fetch('/api/spotify/trends')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) throw new globalThis.Error(data.error);
+        setTrends(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
+        setLoading(false);
+      });
+
+    // Cleanup: Para o som se o usuário sair da página
+    return () => {
+      if (audioRef.current) audioRef.current.pause();
+    };
+  }, []);
+
+  const handlePlay = (track: Track) => {
+    // Se não tiver prévia, avisa (algumas músicas o Spotify não libera)
+    if (!track.previewUrl) {
+      alert('Essa música não tem prévia disponível 😢');
+      return;
+    }
+
+    // Se clicar na mesma música que já está tocando, pausa
+    if (playingId === track.id) {
+      audioRef.current?.pause();
+      setPlayingId(null);
+      return;
+    }
+
+    // Se já tinha outra tocando, para ela
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    // Toca a nova música
+    const audio = new Audio(track.previewUrl);
+    audio.volume = 0.4; // Volume agradável
+    audio.play().catch((e) => console.error('Erro ao tocar:', e));
+
+    // Quando acabar, reseta o ícone
+    audio.onended = () => setPlayingId(null);
+
+    audioRef.current = audio;
+    setPlayingId(track.id);
+  };
 
   return (
-    <section
-      className={cn(
-        !inTrendsPage &&
-          'hover-animation rounded-2xl bg-main-sidebar-background'
-      )}
-    >
+    <section className='hover-animation overflow-hidden rounded-2xl border border-gray-700/30 bg-main-sidebar-background'>
       {loading ? (
-        <Loading />
-      ) : trends ? (
+        <div className='flex justify-center p-4'>
+          <Loading />
+        </div>
+      ) : error ? (
+        // CORREÇÃO: Usamos o apelido ErrorMessage aqui
+        <ErrorMessage />
+      ) : (
         <motion.div
-          className={cn('inner:px-4 inner:py-3', inTrendsPage && 'mt-0.5')}
-          {...variants}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className='inner:px-4 inner:py-3'
         >
-          {!inTrendsPage && (
-            <h2 className='text-xl font-extrabold'>Trends for you</h2>
-          )}
-          {trends.map(({ name, query, tweet_volume, url }) => (
-            <Link href={url} key={query}>
-              <a
-                className='hover-animation accent-tab hover-card relative 
-                           flex cursor-not-allowed flex-col gap-0.5'
-                onClick={preventBubbling()}
+          <h2 className='flex items-center gap-2 border-b border-gray-700/30 px-4 py-3 text-xl font-extrabold'>
+            Top Músicas 🎵
+          </h2>
+
+          <div className='flex flex-col'>
+            {trends.map((track, index) => (
+              <div
+                key={track.id}
+                className='hover-animation group relative flex cursor-pointer items-center 
+                           gap-3 p-3 transition-colors hover:bg-gray-800/50'
               >
-                <div className='absolute right-2 top-2'>
-                  <Button
-                    className='hover-animation group relative cursor-not-allowed p-2
-                               hover:bg-accent-blue/10 focus-visible:bg-accent-blue/20 
-                               focus-visible:!ring-accent-blue/80'
-                    onClick={preventBubbling()}
+                {/* Capa com Botão de Play */}
+                <div
+                  className='relative h-12 w-12 flex-shrink-0 cursor-pointer'
+                  onClick={(e) => {
+                    e.preventDefault(); // Evita abrir o link do post se houver
+                    handlePlay(track);
+                  }}
+                >
+                  <img
+                    src={track.image}
+                    alt={track.name}
+                    className={`h-full w-full rounded-md object-cover shadow-sm transition-all duration-300
+                      ${
+                        playingId === track.id
+                          ? 'brightness-50'
+                          : 'group-hover:brightness-50'
+                      }`}
+                  />
+                  {/* Ícone sobreposto */}
+                  <div
+                    className={`absolute inset-0 flex items-center justify-center text-white
+                    ${
+                      playingId === track.id
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100'
+                    }`}
                   >
                     <HeroIcon
-                      className='h-5 w-5 text-light-secondary group-hover:text-accent-blue 
-                                 group-focus-visible:text-accent-blue dark:text-dark-secondary'
-                      iconName='EllipsisHorizontalIcon'
+                      iconName={
+                        playingId === track.id ? 'PauseIcon' : 'PlayIcon'
+                      }
+                      className='h-6 w-6 drop-shadow-md'
                     />
-                    <ToolTip tip='More' />
-                  </Button>
+                  </div>
                 </div>
-                <p className='text-sm text-light-secondary dark:text-dark-secondary'>
-                  Trending{' '}
-                  {location === 'Worldwide'
-                    ? 'Worldwide'
-                    : `in ${location as string}`}
-                </p>
-                <p className='font-bold'>{name}</p>
-                <p className='text-sm text-light-secondary dark:text-dark-secondary'>
-                  {formatNumber(tweet_volume)} tweets
-                </p>
-              </a>
-            </Link>
-          ))}
-          {!inTrendsPage && (
-            <Link href='/trends'>
-              <a
-                className='custom-button accent-tab hover-card block w-full rounded-2xl
-                           rounded-t-none text-center text-main-accent'
-              >
-                Show more
-              </a>
-            </Link>
-          )}
+
+                {/* Info da Música + Link para Spotify Oficial */}
+                <Link href={track.url} passHref legacyBehavior>
+                  <a
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='flex min-w-0 flex-1 flex-col overflow-hidden pl-1'
+                  >
+                    <p
+                      className={`truncate text-sm font-bold leading-tight transition-colors
+                      ${
+                        playingId === track.id
+                          ? 'text-[#1DB954]'
+                          : 'text-main-accent'
+                      }`}
+                    >
+                      {track.name}
+                    </p>
+                    <p className='truncate text-xs text-light-secondary dark:text-dark-secondary'>
+                      {track.artist}
+                    </p>
+                  </a>
+                </Link>
+
+                {/* Equalizadorzinho visual (Opcional, só aparece tocando) */}
+                {playingId === track.id && (
+                  <span className='hidden animate-pulse text-xs font-bold text-[#1DB954] xs:block'>
+                    Ouvindo...
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
         </motion.div>
-      ) : (
-        <Error />
       )}
     </section>
   );

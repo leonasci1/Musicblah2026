@@ -13,12 +13,13 @@ import { ToolTip } from '@components/ui/tooltip';
 import { HeroIcon } from '@components/ui/hero-icon';
 import type { ReactElement, ReactNode } from 'react';
 
-export default function Bookmarks(): JSX.Element {
+export default function Trends(): JSX.Element {
+  // Renomeei de Bookmarks para Trends para ficar correto
   const { back } = useRouter();
 
   return (
     <MainContainer>
-      <SEO title='Trends / Twitter' />
+      <SEO title='Trends / MusicBlah' />
       <MainHeader useActionButton title='Trends' action={back}>
         <Button
           className='dark-bg-tab group relative ml-auto cursor-not-allowed p-2 hover:bg-light-primary/10
@@ -28,12 +29,14 @@ export default function Bookmarks(): JSX.Element {
           <ToolTip tip='Settings' />
         </Button>
       </MainHeader>
-      <AsideTrends inTrendsPage />
+
+      {/* CORREÇÃO: Removi o "inTrendsPage" que não existe no componente */}
+      <AsideTrends />
     </MainContainer>
   );
 }
 
-Bookmarks.getLayout = (page: ReactElement): ReactNode => (
+Trends.getLayout = (page: ReactElement): ReactNode => (
   <ProtectedLayout>
     <MainLayout>
       <TrendsLayout>{page}</TrendsLayout>

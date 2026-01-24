@@ -45,13 +45,21 @@ export function UserTooltip({
 }: UserTooltipProps): JSX.Element {
   const { isMobile } = useWindow();
 
+  // 🛡️ CORREÇÃO PRINCIPAL:
+  // Se o username estiver vazio (ex: dados antigos ou erro),
+  // retornamos apenas o filho sem tentar montar o Tooltip.
+  // Isso impede o erro de "href undefined" nos Links.
+  if (!username) {
+    return <>{children}</>;
+  }
+
   if (isMobile || modal) return <>{children}</>;
 
   const userLink = `/user/${username}`;
 
   const allStats: Readonly<Stats[]> = [
-    ['following', 'Following', following.length],
-    ['followers', 'Followers', followers.length]
+    ['following', 'Following', following?.length || 0], // Proteção extra (.length)
+    ['followers', 'Followers', followers?.length || 0]
   ];
 
   return (
@@ -63,16 +71,16 @@ export function UserTooltip({
     >
       {children}
       <div
-        className='menu-container invisible absolute left-1/2 w-72 -translate-x-1/2 rounded-2xl 
-                   opacity-0 [transition:visibility_0ms_ease_400ms,opacity_200ms_ease_200ms] group-hover:visible 
-                   group-hover:opacity-100 group-hover:delay-500'
+        className='menu-container invisible absolute left-1/2 z-50 w-72 -translate-x-1/2 
+                   rounded-2xl border border-gray-700 
+                   bg-main-background opacity-0 shadow-xl [transition:visibility_0ms_ease_400ms,opacity_200ms_ease_200ms] group-hover:visible group-hover:opacity-100 group-hover:delay-500'
       >
         <div className='flex flex-col gap-3 p-4'>
           <div className='flex flex-col gap-2'>
             <div className='-mx-4 -mt-4'>
               {coverPhotoURL ? (
                 <Link href={userLink}>
-                  <a className='blur-picture'>
+                  <a className='blur-picture relative block h-24'>
                     <NextImage
                       useSkeleton
                       className='relative h-24'
@@ -116,8 +124,8 @@ export function UserTooltip({
           </div>
           {bio && <p>{bio}</p>}
           <div className='text-secondary flex gap-4'>
-            {allStats.map(([id, label, stat]) => (
-              <Link href={`${userLink}/${id}`} key={id}>
+            {allStats.map(([statId, label, stat]) => (
+              <Link href={`${userLink}/${statId}`} key={statId}>
                 <a
                   className='hover-animation flex h-4 items-center gap-1 border-b border-b-transparent 
                              outline-none hover:border-b-light-primary focus-visible:border-b-light-primary

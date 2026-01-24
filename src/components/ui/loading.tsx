@@ -1,5 +1,5 @@
 import cn from 'clsx';
-import { CustomIcon } from './custom-icon';
+import { BrandLogo } from '@components/common/brand-logo';
 
 type LoadingProps = {
   className?: string;
@@ -11,11 +11,13 @@ export function Loading({
   iconClassName
 }: LoadingProps): JSX.Element {
   return (
-    <i className={cn('flex justify-center', className ?? 'p-4')}>
-      <CustomIcon
-        className={cn('text-main-accent', iconClassName ?? 'h-7 w-7')}
-        iconName='SpinnerIcon'
+    <div className={cn('flex items-center justify-center', className ?? 'p-8')}>
+      <BrandLogo
+        signature
+        width={360}
+        height={120}
+        className={iconClassName ?? 'h-auto w-[280px] sm:w-[360px]'}
       />
-    </i>
+    </div>
   );
 }

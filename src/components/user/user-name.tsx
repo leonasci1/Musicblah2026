@@ -1,46 +1,60 @@
-import cn from 'clsx';
 import Link from 'next/link';
+import cn from 'clsx';
 import { HeroIcon } from '@components/ui/hero-icon';
 
 type UserNameProps = {
-  tag?: keyof JSX.IntrinsicElements;
   name: string;
-  verified: boolean;
   username?: string;
+  verified?: boolean;
   className?: string;
   iconClassName?: string;
+  disableLink?: boolean; // ✨ Nova prop
 };
 
 export function UserName({
-  tag,
   name,
-  verified,
   username,
+  verified,
   className,
-  iconClassName
+  iconClassName,
+  disableLink
 }: UserNameProps): JSX.Element {
-  const CustomTag = tag ? tag : 'p';
+  const content = (
+    <>
+      <span className='truncate'>{name}</span>
+      {verified && (
+        <HeroIcon
+          className={cn('h-5 w-5 text-main-accent', iconClassName)}
+          iconName='CheckBadgeIcon'
+          solid
+        />
+      )}
+    </>
+  );
 
-  return (
-    <Link href={username ? `/user/${username}` : '#'}>
-      <a
+  // Se não tiver username OU disableLink for true, vira texto comum
+  if (!username || disableLink) {
+    return (
+      <div
         className={cn(
-          'flex items-center gap-1 truncate font-bold',
-          username ? 'custom-underline' : 'pointer-events-none',
+          'flex items-center gap-1 truncate font-bold text-light-primary dark:text-dark-primary',
           className
         )}
-        tabIndex={username ? 0 : -1}
       >
-        <CustomTag className='truncate'>{name}</CustomTag>
-        {verified && (
-          <i>
-            <HeroIcon
-              className={cn('fill-accent-blue', iconClassName ?? 'h-5 w-5')}
-              iconName='CheckBadgeIcon'
-              solid
-            />
-          </i>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link href={`/user/${username}`}>
+      <a
+        className={cn(
+          'flex items-center gap-1 truncate font-bold text-light-primary decoration-2 underline-offset-2 hover:underline dark:text-dark-primary',
+          className
         )}
+      >
+        {content}
       </a>
     </Link>
   );

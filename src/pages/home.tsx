@@ -1,5 +1,5 @@
 import { AnimatePresence } from 'framer-motion';
-import { where, orderBy } from 'firebase/firestore';
+import { orderBy } from 'firebase/firestore';
 import { useWindow } from '@lib/context/window-context';
 import { useInfiniteScroll } from '@lib/hooks/useInfiniteScroll';
 import { tweetsCollection } from '@lib/firebase/collections';
@@ -18,15 +18,22 @@ import type { ReactElement, ReactNode } from 'react';
 export default function Home(): JSX.Element {
   const { isMobile } = useWindow();
 
+  // CORREÇÃO: Removemos "where('parent', '==', null)"
+  // Isso evita o erro "failed-precondition" (falta de índice no Firebase).
+  // O hook agora baixa os posts misturados (posts + respostas)
   const { data, loading, LoadMore } = useInfiniteScroll(
     tweetsCollection,
-    [where('parent', '==', null), orderBy('createdAt', 'desc')],
+    [orderBy('createdAt', 'desc')],
     { includeUser: true, allowNull: true, preserve: true }
   );
 
+  // FILTRO CLIENT-SIDE:
+  // Aqui removemos as respostas (replies) antes de mostrar na tela.
+  const homeTweets = data?.filter((tweet) => !tweet.parent);
+
   return (
     <MainContainer>
-      <SEO title='Home / Twitter' />
+      <SEO title='Home / MusicBlah' />
       <MainHeader
         useMobileSidebar
         title='Home'
@@ -38,12 +45,12 @@ export default function Home(): JSX.Element {
       <section className='mt-0.5 xs:mt-0'>
         {loading ? (
           <Loading className='mt-5' />
-        ) : !data ? (
+        ) : !homeTweets ? (
           <Error message='Something went wrong' />
         ) : (
           <>
             <AnimatePresence mode='popLayout'>
-              {data.map((tweet) => (
+              {homeTweets.map((tweet) => (
                 <Tweet {...tweet} key={tweet.id} />
               ))}
             </AnimatePresence>

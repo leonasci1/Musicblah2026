@@ -15,7 +15,13 @@ import { usersCollection } from '@lib/firebase/collections';
 import { UserCard } from '@components/user/user-card';
 import { Loading } from '@components/ui/loading';
 import { Error } from '@components/ui/error';
-import { variants } from './aside-trends';
+
+// CORREÇÃO: Definimos a animação aqui mesmo para não depender de importação
+const variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  transition: { duration: 0.8 }
+};
 
 export function Suggestions(): JSX.Element {
   const { randomSeed } = useAuth();
@@ -46,7 +52,7 @@ export function Suggestions(): JSX.Element {
           {suggestionsData?.map((userData) => (
             <UserCard {...userData} key={userData.id} />
           ))}
-          <Link href='/people'>
+          <Link href='/people' legacyBehavior>
             <a
               className='custom-button accent-tab hover-card block w-full rounded-2xl
                          rounded-t-none text-center text-main-accent'

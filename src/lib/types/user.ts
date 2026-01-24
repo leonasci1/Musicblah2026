@@ -20,11 +20,26 @@ export type User = {
   totalPhotos: number;
   pinnedTweet: string | null;
   coverPhotoURL: string | null;
+  // Campos Musicais
+  favoriteArtist?: string | null;
+  musicGenres?: string | null;
+  favoriteAlbum?: string | null;
+  favoriteTrack?: string | null;
 };
 
+// FIX: Adicionei as chaves aqui para permitir edição
 export type EditableData = Extract<
   keyof User,
-  'bio' | 'name' | 'website' | 'photoURL' | 'location' | 'coverPhotoURL'
+  | 'bio'
+  | 'name'
+  | 'website'
+  | 'photoURL'
+  | 'location'
+  | 'coverPhotoURL'
+  | 'favoriteArtist'
+  | 'musicGenres'
+  | 'favoriteAlbum'
+  | 'favoriteTrack'
 >;
 
 export type EditableUserData = Pick<User, EditableData>;

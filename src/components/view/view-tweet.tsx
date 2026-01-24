@@ -14,6 +14,7 @@ import { variants } from '@components/tweet/tweet';
 import { TweetActions } from '@components/tweet/tweet-actions';
 import { TweetStats } from '@components/tweet/tweet-stats';
 import { TweetDate } from '@components/tweet/tweet-date';
+import { TweetReview } from '@components/tweet/tweet-review'; // ✅ Suporte para reviews
 import { Input } from '@components/input/input';
 import type { RefObject } from 'react';
 import type { User } from '@lib/types/user';
@@ -36,30 +37,27 @@ export function ViewTweet(tweet: ViewTweetProps): JSX.Element {
     userRetweets,
     userReplies,
     viewTweetRef,
-    user: tweetUserData
+    user: tweetUserData,
+    type, // ✅ Identifica se é música
+    album, // ✅ Dados do Spotify
+    rating // ✅ Estrelas
   } = tweet;
 
   const { id: ownerId, name, username, verified, photoURL } = tweetUserData;
-
   const { user } = useAuth();
-
   const { open, openModal, closeModal } = useModal();
 
   const tweetLink = `/tweet/${tweetId}`;
-
   const userId = user?.id as string;
-
   const isOwner = userId === createdBy;
-
   const reply = !!parent;
-
   const { id: parentId, username: parentUsername = username } = parent ?? {};
 
   return (
     <motion.article
       className={cn(
-        `accent-tab h- relative flex cursor-default flex-col gap-3 border-b
-         border-light-border px-4 py-3 outline-none dark:border-dark-border`,
+        `accent-tab relative flex cursor-default flex-col gap-3 border-b
+         border-light-border px-4 py-4 outline-none dark:border-dark-border`,
         reply && 'scroll-m-[3.25rem] pt-0'
       )}
       {...variants}
@@ -75,45 +73,59 @@ export function ViewTweet(tweet: ViewTweetProps): JSX.Element {
       >
         <TweetReplyModal tweet={tweet} closeModal={closeModal} />
       </Modal>
+
       <div className='flex flex-col gap-2'>
         {reply && (
           <div className='flex w-12 items-center justify-center'>
             <i className='hover-animation h-2 w-0.5 bg-light-line-reply dark:bg-dark-line-reply' />
           </div>
         )}
-        <div className='grid grid-cols-[auto,1fr] gap-3'>
-          <UserTooltip avatar {...tweetUserData}>
-            <UserAvatar src={photoURL} alt={name} username={username} />
-          </UserTooltip>
-          <div className='flex min-w-0 justify-between'>
-            <div className='flex flex-col truncate xs:overflow-visible xs:whitespace-normal'>
+
+        {/* PERFIL MELHORADO: Alinhamento horizontal e contexto visual */}
+        <div className='flex items-center justify-between gap-3'>
+          <div className='flex min-w-0 items-center gap-3'>
+            <UserTooltip avatar {...tweetUserData}>
+              <UserAvatar
+                src={photoURL}
+                alt={name}
+                username={username}
+                className='h-12 w-12 ring-4 ring-main-accent/10'
+              />
+            </UserTooltip>
+
+            <div className='flex min-w-0 flex-col leading-tight'>
               <UserTooltip {...tweetUserData}>
                 <UserName
-                  className='-mb-1'
+                  className='-mb-0.5 text-lg font-bold text-light-primary dark:text-dark-primary'
                   name={name}
                   username={username}
                   verified={verified}
                 />
               </UserTooltip>
               <UserTooltip {...tweetUserData}>
-                <UserUsername username={username} />
+                <UserUsername
+                  className='text-[15px] text-light-secondary dark:text-dark-secondary'
+                  username={username}
+                />
               </UserTooltip>
             </div>
-            <div className='px-4'>
-              <TweetActions
-                viewTweet
-                isOwner={isOwner}
-                ownerId={ownerId}
-                tweetId={tweetId}
-                parentId={parentId}
-                username={username}
-                hasImages={!!images}
-                createdBy={createdBy}
-              />
-            </div>
+          </div>
+
+          <div className='self-start'>
+            <TweetActions
+              viewTweet
+              isOwner={isOwner}
+              ownerId={ownerId}
+              tweetId={tweetId}
+              parentId={parentId}
+              username={username}
+              hasImages={!!images}
+              createdBy={createdBy}
+            />
           </div>
         </div>
       </div>
+
       {reply && (
         <p className='text-light-secondary dark:text-dark-secondary'>
           Replying to{' '}
@@ -124,21 +136,33 @@ export function ViewTweet(tweet: ViewTweetProps): JSX.Element {
           </Link>
         </p>
       )}
-      <div>
-        {text && (
-          <p className='whitespace-pre-line break-words text-2xl'>{text}</p>
+
+      {/* CONTEÚDO PRINCIPAL: Texto ou Música */}
+      <div className='mt-2'>
+        {type === 'review' && album ? (
+          <div className='mb-4'>
+            {/* Renderiza o card da música com a sua nota */}
+            <TweetReview tweet={tweet} />
+          </div>
+        ) : (
+          text && (
+            <p className='mb-4 whitespace-pre-line break-words text-2xl'>
+              {text}
+            </p>
+          )
         )}
+
         {images && (
-          <ImagePreview
-            viewTweet
-            imagesPreview={images}
-            previewCount={images.length}
-          />
+          <div className='mb-4'>
+            <ImagePreview
+              viewTweet
+              imagesPreview={images}
+              previewCount={images.length}
+            />
+          </div>
         )}
-        <div
-          className='inner:hover-animation inner:border-b inner:border-light-border
-                     dark:inner:border-dark-border'
-        >
+
+        <div className='inner:hover-animation inner:border-b inner:border-light-border dark:inner:border-dark-border'>
           <TweetDate viewTweet tweetLink={tweetLink} createdAt={createdAt} />
           <TweetStats
             viewTweet

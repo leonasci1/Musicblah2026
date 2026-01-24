@@ -57,7 +57,7 @@ export default function Bookmarks(): JSX.Element {
 
   return (
     <MainContainer>
-      <SEO title='Bookmarks / Twitter' />
+      <SEO title='Bookmarks / MusicBlah' />
       <Modal
         modalClassName='max-w-xs bg-main-background w-full p-8 rounded-2xl'
         open={open}
@@ -65,7 +65,7 @@ export default function Bookmarks(): JSX.Element {
       >
         <ActionModal
           title='Clear all Bookmarks?'
-          description='This can’t be undone and you’ll remove all Tweets you’ve added to your Bookmarks.'
+          description='This can’t be undone and you’ll remove all Posts you’ve added to your Bookmarks.'
           mainBtnClassName='bg-accent-red hover:bg-accent-red/90 active:bg-accent-red/75 accent-tab 
                             focus-visible:bg-accent-red/90'
           mainBtnLabel='Clear'

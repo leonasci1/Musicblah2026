@@ -6,27 +6,39 @@
 
 @layer base {
   :root {
+    /* Define o tema escuro/violeta como padrão */
     --main-background: var(--dark-background);
     --main-search-background: var(--dark-search-background);
     --main-sidebar-background: var(--dark-sidebar-background);
-    --main-accent: var(--accent-blue);
+    --main-accent: var(--accent-purple);
 
-    --dark-background: 0 0 0;
-    --dim-background: 22 33 44;
+    /* --- PALETA MUSIC & TECH (Deep Violet / Cyberpunk) --- */
+
+    /* Fundo Principal: Roxo quase preto */
+    --dark-background: 13 9 23;
+
+    /* Fundo de Inputs/Busca: Um violeta acinzentado mais claro para contraste */
+    --dark-search-background: 31 26 46;
+
+    /* Sidebar: Igual ao fundo principal (a mágica acontece na transparência da classe .glass-sidebar) */
+    --dark-sidebar-background: 13 9 23;
+
+    /* (Opcional) Tema "Dim" (Meia-luz) harmonizado também */
+    --dim-background: 21 16 35;
+    --dim-search-background: 39 32 60;
+    --dim-sidebar-background: 21 16 35;
+
+    /* Tema Claro */
     --light-background: 255 255 255;
-
-    --dark-search-background: 32 35 39;
-    --dim-search-background: 39 51 64;
     --light-search-background: 239 243 244;
-
-    --dark-sidebar-background: 22 24 28;
-    --dim-sidebar-background: 30 39 50;
     --light-sidebar-background: 247 249 249;
 
+    /* --- CORES DE DESTAQUE --- */
     --accent-yellow: 255 213 0;
     --accent-blue: 29 155 240;
+    --accent-cyan: 29 155 240;
     --accent-pink: 249 26 130;
-    --accent-purple: 120 87 255;
+    --accent-purple: 120 87 255; /* Roxo vibrante (Neon) */
     --accent-orange: 255 122 0;
     --accent-green: 0 184 122;
   }
@@ -39,7 +51,7 @@
   }
 
   body {
-    @apply hover-animation bg-main-background font-twitter-chirp text-light-primary dark:text-dark-primary;
+    @apply hover-animation bg-main-background font-sans text-light-primary dark:text-dark-primary;
   }
 }
 
@@ -91,5 +103,13 @@
     @apply z-10 rounded-md bg-main-background outline-none 
            [box-shadow:#65778633_0px_0px_15px,_#65778626_0px_0px_3px_1px] 
            dark:[box-shadow:#ffffff33_0px_0px_15px,_#ffffff26_0px_0px_3px_1px];
+  }
+
+  /* --- NOVA CLASSE PARA SIDEBAR --- */
+  .glass-sidebar {
+    /* bg-main-sidebar-background/80 aplica 80% de opacidade na cor de fundo
+       backdrop-blur-md aplica o desfoque no que estiver atrás
+    */
+    @apply border-r border-light-border bg-main-sidebar-background/80 backdrop-blur-md dark:border-dark-border;
   }
 }
