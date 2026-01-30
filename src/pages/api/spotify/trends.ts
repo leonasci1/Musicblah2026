@@ -22,8 +22,8 @@ export default async function handler(
     spotifyApi.setAccessToken(authData.body['access_token']);
 
     // 3. BUSCANDO A PLAYLIST
-    // ID: 1c609af7tgj5Lvpdxad8au
-    const playlistId = '1c609af7tgj5Lvpdxad8au';
+    // Playlist personalizada do MusicBlah
+    const playlistId = '6u9LZXR0uu3Lu5UD6mfZ4r';
 
     console.log(`🎵 Buscando Playlist ID: ${playlistId}...`);
     const playlist = await spotifyApi.getPlaylist(playlistId);

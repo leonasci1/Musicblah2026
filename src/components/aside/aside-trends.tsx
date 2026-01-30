@@ -101,6 +101,11 @@ export function AsideTrends(): JSX.Element {
                 className='hover-animation group relative flex cursor-pointer items-center 
                            gap-3 p-3 transition-colors hover:bg-gray-800/50'
               >
+                {/* Ranking Number */}
+                <span className='w-5 text-center text-sm font-bold text-light-secondary dark:text-dark-secondary'>
+                  {index + 1}
+                </span>
+
                 {/* Capa com Botão de Play */}
                 <div
                   className='relative h-12 w-12 flex-shrink-0 cursor-pointer'
