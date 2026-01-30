@@ -7,6 +7,7 @@ import type { NavLink } from './sidebar';
 
 type SidebarLinkProps = NavLink & {
   username?: string;
+  badge?: number;
 };
 
 export function SidebarLink({
@@ -15,7 +16,8 @@ export function SidebarLink({
   iconName,
   linkName,
   disabled,
-  canBeHidden
+  canBeHidden,
+  badge
 }: SidebarLinkProps): JSX.Element {
   const { asPath } = useRouter();
   const isActive = username ? asPath.includes(username) : asPath === href;
@@ -39,17 +41,35 @@ export function SidebarLink({
             isActive && 'font-bold'
           )}
         >
-          <HeroIcon
-            className={cn(
-              'h-7 w-7',
-              isActive &&
-                ['Explore', 'Lists'].includes(linkName) &&
-                'stroke-white'
+          <div className='relative'>
+            <HeroIcon
+              className={cn(
+                'h-7 w-7',
+                isActive &&
+                  ['Explore', 'Lists'].includes(linkName) &&
+                  'stroke-white'
+              )}
+              iconName={iconName}
+              solid={isActive}
+            />
+            {badge && badge > 0 && (
+              <span
+                className='absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center 
+                rounded-full bg-main-accent text-xs font-bold text-white'
+              >
+                {badge > 9 ? '9+' : badge}
+              </span>
             )}
-            iconName={iconName}
-            solid={isActive}
-          />
+          </div>
           <p className='hidden xl:block'>{linkName}</p>
+          {badge && badge > 0 && (
+            <span
+              className='hidden h-5 min-w-[20px] items-center justify-center rounded-full 
+              bg-main-accent px-1.5 text-xs font-bold text-white xl:inline-flex'
+            >
+              {badge > 99 ? '99+' : badge}
+            </span>
+          )}
         </div>
       </a>
     </Link>

@@ -1,6 +1,7 @@
 import { useAuth } from '@lib/context/auth-context';
 import { useModal } from '@lib/hooks/useModal';
 import { manageFollow } from '@lib/firebase/utils';
+import { createNotification } from '@lib/firebase/notifications';
 import { preventBubbling } from '@lib/utils';
 import { Modal } from '@components/modal/modal';
 import { ActionModal } from '@components/modal/action-modal';
@@ -22,8 +23,17 @@ export function FollowButton({
 
   const { id: userId, following } = user ?? {};
 
-  const handleFollow = (): Promise<void> =>
-    manageFollow('follow', userId as string, userTargetId);
+  const handleFollow = async (): Promise<void> => {
+    await manageFollow('follow', userId as string, userTargetId);
+    // Criar notificação de follow
+    if (user) {
+      void createNotification({
+        type: 'follow',
+        toUserId: userTargetId,
+        fromUser: user
+      });
+    }
+  };
 
   const handleUnfollow = async (): Promise<void> => {
     await manageFollow('unfollow', userId as string, userTargetId);

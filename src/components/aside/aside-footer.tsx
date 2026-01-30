@@ -1,9 +1,9 @@
 const footerLinks = [
-  ['Terms of Service', '/tos'],
-  ['Privacy Policy', '/privacy'],
-  ['Cookie Policy', '/cookies'],
-  ['Accessibility', '/accessibility'],
-  ['Ads Info', '/ads']
+  ['Termos de Serviço', '/tos'],
+  ['Política de Privacidade', '/privacy'],
+  ['Política de Cookies', '/cookies'],
+  ['Acessibilidade', '/accessibility'],
+  ['Info de Anúncios', '/ads']
 ] as const;
 
 export function AsideFooter(): JSX.Element {

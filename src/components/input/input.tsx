@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useId } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import cn from 'clsx';
 import { toast } from 'react-hot-toast';
-import { addDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { addDoc, getDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { tweetsCollection } from '@lib/firebase/collections';
 import {
   manageReply,
@@ -11,6 +11,7 @@ import {
   manageTotalTweets,
   manageTotalPhotos
 } from '@lib/firebase/utils';
+import { createNotification } from '@lib/firebase/notifications';
 import { useAuth } from '@lib/context/auth-context';
 import { sleep } from '@lib/utils';
 import { getImagesData } from '@lib/validation';
@@ -104,6 +105,24 @@ export function Input({
 
     const { id: tweetId } = await getDoc(tweetRef);
 
+    // Criar notificação de reply
+    if (isReplying && parent && user) {
+      // Buscar o dono do tweet original
+      const parentTweetRef = doc(tweetsCollection, parent.id);
+      const parentTweetSnap = await getDoc(parentTweetRef);
+      const parentTweetData = parentTweetSnap.data();
+
+      if (parentTweetData && parentTweetData.createdBy !== userId) {
+        void createNotification({
+          type: 'reply',
+          toUserId: parentTweetData.createdBy,
+          fromUser: user,
+          tweetId: parent.id,
+          tweetText: inputValue.trim() || 'respondeu seu post'
+        });
+      }
+    }
+
     if (!modal && !replyModal) {
       discardTweet();
       setLoading(false);
@@ -114,9 +133,9 @@ export function Input({
     toast.success(
       () => (
         <span className='flex gap-2'>
-          Your Tweet was sent
+          Seu post foi publicado
           <Link href={`/tweet/${tweetId}`}>
-            <a className='custom-underline font-bold'>View</a>
+            <a className='custom-underline font-bold'>Ver</a>
           </Link>
         </span>
       ),
@@ -163,6 +182,71 @@ export function Input({
     ) as ImageData;
 
     URL.revokeObjectURL(src);
+  };
+
+  // Enviar Lyric Card como post
+  const sendLyricCard = async (data: {
+    track: {
+      id: string;
+      name: string;
+      artist: string;
+      album: string;
+      image: string;
+      url: string;
+    };
+    lyricText: string;
+    backgroundColor: string;
+  }): Promise<void> => {
+    setLoading(true);
+
+    const userId = user?.id as string;
+
+    const lyricData: WithFieldValue<Omit<Tweet, 'id'>> = {
+      text: null,
+      parent: null,
+      images: null,
+      userLikes: [],
+      createdBy: userId,
+      createdAt: serverTimestamp(),
+      updatedAt: null,
+      userReplies: 0,
+      userRetweets: [],
+      // Dados específicos do Lyric Card
+      type: 'lyric',
+      lyric: {
+        text: data.lyricText,
+        backgroundColor: data.backgroundColor,
+        trackId: data.track.id,
+        trackName: data.track.name,
+        artistName: data.track.artist,
+        albumName: data.track.album,
+        albumImage: data.track.image,
+        spotifyUrl: data.track.url
+      }
+    };
+
+    await sleep(500);
+
+    const [tweetRef] = await Promise.all([
+      addDoc(tweetsCollection, lyricData),
+      manageTotalTweets('increment', userId)
+    ]);
+
+    const { id: tweetId } = await getDoc(tweetRef);
+
+    setLoading(false);
+
+    toast.success(
+      () => (
+        <span className='flex gap-2'>
+          Letra compartilhada!
+          <Link href={`/tweet/${tweetId}`}>
+            <a className='custom-underline font-bold'>Ver</a>
+          </Link>
+        </span>
+      ),
+      { duration: 6000 }
+    );
   };
 
   const cleanImage = (): void => {
@@ -272,11 +356,13 @@ export function Input({
               <InputOptions
                 reply={reply}
                 modal={modal}
+                parent={parent}
                 inputLimit={inputLimit}
                 inputLength={inputLength}
                 isValidTweet={isValidTweet}
                 isCharLimitExceeded={isCharLimitExceeded}
                 handleImageUpload={handleImageUpload}
+                onLyricSubmit={(data): void => void sendLyricCard(data)}
               />
             )}
           </AnimatePresence>

@@ -70,23 +70,31 @@ export function useCollection<T>(
       setLoading(false);
     };
 
-    const unsubscribe = onSnapshot(cachedQuery, (snapshot) => {
-      const data = snapshot.docs.map((doc) =>
-        doc.data({ serverTimestamps: 'estimate' })
-      );
+    const unsubscribe = onSnapshot(
+      cachedQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) =>
+          doc.data({ serverTimestamps: 'estimate' })
+        );
 
-      if (allowNull && !data.length) {
+        if (allowNull && !data.length) {
+          setData(null);
+          setLoading(false);
+          return;
+        }
+
+        if (includeUser) void populateUser(data as DataWithRef<T>);
+        else {
+          setData(data);
+          setLoading(false);
+        }
+      },
+      (error) => {
+        console.error('❌ useCollection error:', error);
+        setLoading(false);
         setData(null);
-        setLoading(false);
-        return;
       }
-
-      if (includeUser) void populateUser(data as DataWithRef<T>);
-      else {
-        setData(data);
-        setLoading(false);
-      }
-    });
+    );
 
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps

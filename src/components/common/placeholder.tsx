@@ -16,7 +16,7 @@ export function Placeholder(): JSX.Element {
           height={120}
           className='h-auto w-[200px] sm:w-[300px] md:w-[380px]'
         />
-        <h1 className='text-center font-twitter-chirp-extended'>
+        <h1 className='text-center font-musicblah-font-extended'>
           <span className='block bg-gradient-to-r from-accent-purple via-accent-cyan to-accent-yellow bg-clip-text text-4xl font-black text-transparent sm:text-5xl md:text-6xl'>
             musicblah
           </span>

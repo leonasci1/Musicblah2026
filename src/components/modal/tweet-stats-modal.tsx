@@ -18,10 +18,10 @@ export function TweetStatsModal({
       <MainHeader
         useActionButton
         disableSticky
-        tip='Close'
+        tip='Fechar'
         iconName='XMarkIcon'
         className='absolute flex w-full items-center gap-6 rounded-tl-2xl'
-        title={`${statsType === 'likes' ? 'Liked' : 'Retweeted'} by`}
+        title={`${statsType === 'likes' ? 'Curtido' : 'Repostado'} por`}
         action={handleClose}
       />
       {children}

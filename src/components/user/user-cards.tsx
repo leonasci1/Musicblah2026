@@ -23,26 +23,26 @@ type NoStatsData = Record<CombinedTypes, StatsEmptyProps>;
 
 const allNoStatsData: Readonly<NoStatsData> = {
   retweets: {
-    title: 'Amplify Tweets you like',
-    imageData: { src: '/assets/no-retweets.png', alt: 'No retweets' },
+    title: 'Compartilhe posts que você curte',
+    imageData: { src: '/assets/no-retweets.png', alt: 'Sem reposts' },
     description:
-      'Share someone else’s Tweet on your timeline by Retweeting it. When you do, it’ll show up here.'
+      'Compartilhe o post de outra pessoa na sua timeline repostando. Quando fizer isso, aparecerá aqui.'
   },
   likes: {
-    title: 'No Tweet Likes yet',
-    imageData: { src: '/assets/no-likes.png', alt: 'No likes' },
-    description: 'When you like a Tweet, it’ll show up here.'
+    title: 'Nenhuma curtida ainda',
+    imageData: { src: '/assets/no-likes.png', alt: 'Sem curtidas' },
+    description: 'Quando você curtir um post, ele aparecerá aqui.'
   },
   following: {
-    title: 'Be in the know',
+    title: 'Fique por dentro',
     description:
-      'Following accounts is an easy way to curate your timeline and know what’s happening with the topics and people you’re interested in.'
+      'Seguir contas é uma forma fácil de personalizar sua timeline e saber o que está acontecendo com os tópicos e pessoas que te interessam.'
   },
   followers: {
-    title: 'Looking for followers?',
-    imageData: { src: '/assets/no-followers.png', alt: 'No followers' },
+    title: 'Procurando seguidores?',
+    imageData: { src: '/assets/no-followers.png', alt: 'Sem seguidores' },
     description:
-      'When someone follows this account, they’ll show up here. Tweeting and interacting with others helps boost followers.'
+      'Quando alguém seguir esta conta, aparecerá aqui. Postar e interagir com outros ajuda a aumentar seguidores.'
   }
 };
 

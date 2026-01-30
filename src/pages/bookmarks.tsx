@@ -57,25 +57,25 @@ export default function Bookmarks(): JSX.Element {
 
   return (
     <MainContainer>
-      <SEO title='Bookmarks / MusicBlah' />
+      <SEO title='Salvos / MusicBlah' />
       <Modal
         modalClassName='max-w-xs bg-main-background w-full p-8 rounded-2xl'
         open={open}
         closeModal={closeModal}
       >
         <ActionModal
-          title='Clear all Bookmarks?'
-          description='This can’t be undone and you’ll remove all Posts you’ve added to your Bookmarks.'
+          title='Limpar todos os salvos?'
+          description='Isso não pode ser desfeito e você removerá todos os posts que adicionou aos Salvos.'
           mainBtnClassName='bg-accent-red hover:bg-accent-red/90 active:bg-accent-red/75 accent-tab 
                             focus-visible:bg-accent-red/90'
-          mainBtnLabel='Clear'
+          mainBtnLabel='Limpar'
           action={handleClear}
           closeModal={closeModal}
         />
       </Modal>
       <MainHeader className='flex items-center justify-between'>
         <div className='-mb-1 flex flex-col'>
-          <h2 className='-mt-1 text-xl font-bold'>Bookmarks</h2>
+          <h2 className='-mt-1 text-xl font-bold'>Salvos</h2>
           <p className='text-xs text-light-secondary dark:text-dark-secondary'>
             @{user?.username}
           </p>
@@ -89,7 +89,7 @@ export default function Bookmarks(): JSX.Element {
           <HeroIcon className='h-5 w-5' iconName='ArchiveBoxXMarkIcon' />
           <ToolTip
             className='!-translate-x-20 translate-y-3 md:-translate-x-1/2'
-            tip='Clear bookmarks'
+            tip='Limpar salvos'
           />
         </Button>
       </MainHeader>
@@ -98,9 +98,9 @@ export default function Bookmarks(): JSX.Element {
           <Loading className='mt-5' />
         ) : !bookmarksRef ? (
           <StatsEmpty
-            title='Save Tweets for later'
-            description='Don’t let the good ones fly away! Bookmark Tweets to easily find them again in the future.'
-            imageData={{ src: '/assets/no-bookmarks.png', alt: 'No bookmarks' }}
+            title='Salve posts para depois'
+            description='Não deixe os bons escaparem! Salve posts para encontrá-los facilmente no futuro.'
+            imageData={{ src: '/assets/no-bookmarks.png', alt: 'Sem salvos' }}
           />
         ) : (
           <AnimatePresence mode='popLayout'>

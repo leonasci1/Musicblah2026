@@ -34,7 +34,7 @@ export function UserShare({ username }: UserShareProps): JSX.Element {
             )}
           >
             <HeroIcon className='h-5 w-5' iconName='EllipsisHorizontalIcon' />
-            {!open && <ToolTip tip='More' />}
+            {!open && <ToolTip tip='Mais' />}
           </Popover.Button>
           <AnimatePresence>
             {open && (
@@ -51,7 +51,7 @@ export function UserShare({ username }: UserShareProps): JSX.Element {
                   onClick={preventBubbling(handleCopy(close))}
                 >
                   <HeroIcon iconName='LinkIcon' />
-                  Copy link to Profile
+                  Copiar link do perfil
                 </Popover.Button>
               </Popover.Panel>
             )}

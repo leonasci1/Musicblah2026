@@ -15,6 +15,7 @@ import { TweetActions } from '@components/tweet/tweet-actions';
 import { TweetStats } from '@components/tweet/tweet-stats';
 import { TweetDate } from '@components/tweet/tweet-date';
 import { TweetReview } from '@components/tweet/tweet-review'; // ✅ Suporte para reviews
+import { LyricCard } from '@components/tweet/lyric-card'; // ✅ Suporte para letras
 import { Input } from '@components/input/input';
 import type { RefObject } from 'react';
 import type { User } from '@lib/types/user';
@@ -40,8 +41,29 @@ export function ViewTweet(tweet: ViewTweetProps): JSX.Element {
     user: tweetUserData,
     type, // ✅ Identifica se é música
     album, // ✅ Dados do Spotify
-    rating // ✅ Estrelas
+    track, // ✅ Dados da track
+    rating, // ✅ Estrelas
+    lyric // ✅ Dados da letra
   } = tweet;
+
+  // Guard: Verificar se temos dados mínimos
+  if (!tweetId || !tweetUserData) {
+    console.error('❌ ViewTweet: Dados incompletos', {
+      tweetId,
+      hasUserData: !!tweetUserData
+    });
+    return <div className='p-4 text-red-400'>Erro ao carregar post</div>;
+  }
+
+  console.log('📺 ViewTweet renderizado:', {
+    tweetId,
+    type,
+    hasAlbum: !!album,
+    hasTrack: !!track,
+    hasRating: !!rating,
+    text: text?.substring(0, 30),
+    userName: tweetUserData?.name
+  });
 
   const { id: ownerId, name, username, verified, photoURL } = tweetUserData;
   const { user } = useAuth();
@@ -128,7 +150,7 @@ export function ViewTweet(tweet: ViewTweetProps): JSX.Element {
 
       {reply && (
         <p className='text-light-secondary dark:text-dark-secondary'>
-          Replying to{' '}
+          Respondendo a{' '}
           <Link href={`/user/${parentUsername}`}>
             <a className='custom-underline text-main-accent'>
               @{parentUsername}
@@ -137,12 +159,27 @@ export function ViewTweet(tweet: ViewTweetProps): JSX.Element {
         </p>
       )}
 
-      {/* CONTEÚDO PRINCIPAL: Texto ou Música */}
+      {/* CONTEÚDO PRINCIPAL: Texto, Música ou Letra */}
       <div className='mt-2'>
-        {type === 'review' && album ? (
+        {type === 'lyric' && lyric ? (
+          <div className='mb-4'>
+            <LyricCard
+              lyricText={lyric.text}
+              trackName={lyric.trackName}
+              artistName={lyric.artistName}
+              albumImage={lyric.albumImage}
+              spotifyUrl={lyric.spotifyUrl}
+              backgroundColor={lyric.backgroundColor}
+            />
+          </div>
+        ) : type === 'review' && (album || track) && rating ? (
           <div className='mb-4'>
             {/* Renderiza o card da música com a sua nota */}
             <TweetReview tweet={tweet} />
+          </div>
+        ) : type === 'review' && !album && !track ? (
+          <div className='mb-4 rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-red-400'>
+            ⚠️ Dados de review não carregados. Tente recarregar a página.
           </div>
         ) : (
           text && (
@@ -174,6 +211,8 @@ export function ViewTweet(tweet: ViewTweetProps): JSX.Element {
             userRetweets={userRetweets}
             userReplies={userReplies}
             openModal={openModal}
+            tweetOwnerId={createdBy}
+            tweetText={text}
           />
         </div>
         <Input reply parent={{ id: tweetId, username: username }} />

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useAuth } from '@lib/context/auth-context';
 import { useWindow } from '@lib/context/window-context';
 import { useModal } from '@lib/hooks/useModal';
+import { useUnreadNotifications } from '@lib/hooks/useNotifications';
 import { Modal } from '@components/modal/modal';
 import { Input } from '@components/input/input';
 import { CustomIcon } from '@components/ui/custom-icon';
@@ -19,43 +20,44 @@ export type NavLink = {
   iconName: IconName;
   disabled?: boolean;
   canBeHidden?: boolean;
+  badge?: number;
 };
 
 const navLinks: Readonly<NavLink[]> = [
   {
     href: '/home',
-    linkName: 'Home',
-    iconName: 'HomeIcon'
+    linkName: 'Início',
+    iconName: 'MusicalNoteIcon' // 🎵 Nota musical
   },
   {
     href: '/explore',
-    linkName: 'Explore',
-    iconName: 'HashtagIcon',
+    linkName: 'Explorar',
+    iconName: 'MagnifyingGlassIcon', // 🔍 Buscar música
     disabled: false,
     canBeHidden: false
   },
   {
     href: '/notifications',
-    linkName: 'Notifications',
-    iconName: 'BellIcon',
-    disabled: true
+    linkName: 'Notificações',
+    iconName: 'BellIcon', // 🔔 Sino de notificação
+    disabled: false
   },
   {
     href: '/messages',
-    linkName: 'Messages',
-    iconName: 'EnvelopeIcon',
+    linkName: 'Mensagens',
+    iconName: 'ChatBubbleLeftRightIcon', // 💬 Chat
     disabled: true
   },
   {
     href: '/bookmarks',
-    linkName: 'Bookmarks',
-    iconName: 'BookmarkIcon',
+    linkName: 'Salvos',
+    iconName: 'HeartIcon', // ❤️ Favoritos
     canBeHidden: true
   },
   {
     href: '/lists',
-    linkName: 'Lists',
-    iconName: 'Bars3BottomLeftIcon',
+    linkName: 'Playlists',
+    iconName: 'QueueListIcon', // 📋 Lista de reprodução
     disabled: true,
     canBeHidden: true
   }
@@ -64,10 +66,20 @@ const navLinks: Readonly<NavLink[]> = [
 export function Sidebar(): JSX.Element {
   const { user } = useAuth();
   const { isMobile } = useWindow();
+  const unreadCount = useUnreadNotifications(user?.id);
 
   const { open, openModal, closeModal } = useModal();
 
   const username = user?.username as string;
+
+  // Adiciona badge de notificações dinamicamente
+  const navLinksWithBadge = navLinks.map((link) => ({
+    ...link,
+    badge:
+      link.href === '/notifications' && unreadCount > 0
+        ? unreadCount
+        : undefined
+  }));
 
   return (
     <header
@@ -94,20 +106,20 @@ export function Sidebar(): JSX.Element {
               <a
                 className='custom-button main-tab text-accent-purple transition hover:bg-light-primary/10 
                            focus-visible:bg-accent-purple/10 focus-visible:!ring-accent-purple/80
-                           dark:text-twitter-icon dark:hover:bg-dark-primary/10'
+                           dark:text-musicblah-icon dark:hover:bg-dark-primary/10'
               >
                 <BrandLogo width={28} height={28} />
               </a>
             </Link>
           </h1>
           <nav className='flex items-center justify-around xs:flex-col xs:justify-center xl:block'>
-            {navLinks.map(({ ...linkData }) => (
+            {navLinksWithBadge.map(({ ...linkData }) => (
               <SidebarLink {...linkData} key={linkData.href} />
             ))}
             <SidebarLink
               href={`/user/${username}`}
               username={username}
-              linkName='Profile'
+              linkName='Perfil'
               iconName='UserIcon'
             />
             {!isMobile && <MoreSettings />}

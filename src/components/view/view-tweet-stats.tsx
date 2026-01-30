@@ -55,9 +55,9 @@ export function ViewTweetStats({
   };
 
   const allStats: Readonly<Stats[]> = [
-    ['Reply', null, replyMove, currentReplies],
-    ['Retweet', 'retweets', tweetMove, currentTweets],
-    ['Like', 'likes', likeMove, currentLikes]
+    ['Resposta', null, replyMove, currentReplies],
+    ['Repost', 'retweets', tweetMove, currentTweets],
+    ['Curtida', 'likes', likeMove, currentLikes]
   ];
 
   return (
@@ -98,13 +98,7 @@ export function ViewTweetStats({
                   onClick={type ? handleOpen(type) : undefined}
                 >
                   <NumberStats move={move} stats={stats} />
-                  <p>{`${
-                    stats === 1
-                      ? title
-                      : stats > 1 && index === 0
-                      ? `${title.slice(0, -1)}ies`
-                      : `${title}s`
-                  }`}</p>
+                  <p>{`${stats === 1 ? title : `${title}s`}`}</p>
                 </button>
               )
           )}

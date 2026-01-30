@@ -10,9 +10,9 @@ type DisplayModalProps = {
 };
 
 const themes: Readonly<[Theme, string][]> = [
-  ['light', 'Default'],
-  ['dim', 'Dim'],
-  ['dark', 'Lights out']
+  ['light', 'Claro'],
+  ['dim', 'Escurecido'],
+  ['dark', 'Escuro']
 ];
 
 const accentsColor: Readonly<Accent[]> = [
@@ -28,9 +28,10 @@ export function DisplayModal({ closeModal }: DisplayModalProps): JSX.Element {
   return (
     <div className='flex flex-col items-center gap-6'>
       <div className='flex flex-col gap-3 text-center'>
-        <h2 className='text-2xl font-bold'>Customize your view</h2>
+        <h2 className='text-2xl font-bold'>Personalize sua visualização</h2>
         <p className='text-light-secondary dark:text-dark-secondary'>
-          These settings affect all the MusicBlah accounts on this browser.
+          Essas configurações afetam todas as contas do MusicBlah neste
+          navegador.
         </p>
       </div>
       <article
@@ -38,7 +39,7 @@ export function DisplayModal({ closeModal }: DisplayModalProps): JSX.Element {
                    border-light-border px-4 py-3 dark:border-dark-border'
       >
         <div className='grid grid-cols-[auto,1fr] gap-3'>
-          <UserAvatar src='/assets/twitter-avatar.jpg' alt='MusicBlah' />
+          <UserAvatar src='/assets/musicblah-avatar.jpg' alt='MusicBlah' />
           <div>
             <div className='flex gap-1'>
               <UserName verified name='MusicBlah' />
@@ -51,17 +52,16 @@ export function DisplayModal({ closeModal }: DisplayModalProps): JSX.Element {
               </div>
             </div>
             <p className='whitespace-pre-line break-words'>
-              At the heart of MusicBlah are short messages — just like this one
-              — which can include photos, videos, links, text, hashtags, and
-              mentions like <span className='text-main-accent'>@musicblah</span>
-              .
+              No coração do MusicBlah estão mensagens curtas — como esta — que
+              podem incluir fotos, vídeos, links, texto, hashtags e menções como{' '}
+              <span className='text-main-accent'>@musicblah</span>.
             </p>
           </div>
         </div>
       </article>
       <div className='flex w-full flex-col gap-1'>
         <p className='text-sm font-bold text-light-secondary dark:text-dark-secondary'>
-          Color
+          Cor
         </p>
         <div
           className='hover-animation grid grid-cols-3 grid-rows-2 justify-items-center gap-3 
@@ -74,7 +74,7 @@ export function DisplayModal({ closeModal }: DisplayModalProps): JSX.Element {
       </div>
       <div className='flex w-full flex-col gap-1'>
         <p className='text-sm font-bold text-light-secondary dark:text-dark-secondary'>
-          Background
+          Fundo
         </p>
         <div
           className='hover-animation grid grid-rows-3 gap-3 rounded-2xl bg-main-sidebar-background
@@ -90,7 +90,7 @@ export function DisplayModal({ closeModal }: DisplayModalProps): JSX.Element {
                    text-white hover:bg-main-accent/90 active:bg-main-accent/75'
         onClick={closeModal}
       >
-        Done
+        Pronto
       </Button>
     </div>
   );

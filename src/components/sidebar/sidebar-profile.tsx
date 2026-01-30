@@ -30,9 +30,9 @@ export function SidebarProfile(): JSX.Element {
         <ActionModal
           useIcon
           focusOnMainBtn
-          title='Log out of MusicBlah?'
-          description='You can always log back in at any time. If you just want to switch accounts, you can do that by adding an existing account.'
-          mainBtnLabel='Log out'
+          title='Sair do MusicBlah?'
+          description='Você pode voltar a qualquer momento. Se quiser apenas trocar de conta, pode fazer isso adicionando uma conta existente.'
+          mainBtnLabel='Sair'
           action={signOut}
           closeModal={closeModal}
         />
@@ -114,7 +114,7 @@ export function SidebarProfile(): JSX.Element {
                         onClick={openModal}
                       >
                         <HeroIcon iconName='ArrowRightOnRectangleIcon' />
-                        Log out @{username}
+                        Sair @{username}
                       </Button>
                     )}
                   </Menu.Item>

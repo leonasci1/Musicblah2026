@@ -6,6 +6,7 @@ import { SEO } from '@components/common/seo';
 import { UserHomeCover } from '@components/user/user-home-cover';
 import { UserHomeAvatar } from '@components/user/user-home-avatar';
 import { UserDetails } from '@components/user/user-details';
+import { UserMusicStats } from '@components/user/user-music-stats';
 import { UserNav } from '@components/user/user-nav';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
@@ -80,7 +81,7 @@ export function UserHomeLayout({ children }: LayoutProps): JSX.Element {
                                  dark:hover:bg-dark-primary/10 dark:active:bg-dark-primary/20'
                     >
                       <HeroIcon className='h-5 w-5' iconName='EnvelopeIcon' />
-                      <ToolTip tip='Message' />
+                      <ToolTip tip='Mensagem' />
                     </Button>
                     <FollowButton
                       userTargetId={userData.id}
@@ -97,6 +98,7 @@ export function UserHomeLayout({ children }: LayoutProps): JSX.Element {
       </motion.section>
       {userData && (
         <>
+          <UserMusicStats userId={userData.id} />
           <UserNav />
           {children}
         </>

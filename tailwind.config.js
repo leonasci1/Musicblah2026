@@ -13,8 +13,8 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Outfit', ...defaultTheme.fontFamily.sans],
-        'twitter-chirp': ['Outfit', 'sans-serif'],
-        'twitter-chirp-extended': ['Outfit', 'sans-serif']
+        'musicblah-font': ['MusicBlahFont', 'sans-serif'],
+        'musicblah-font-extended': ['MusicBlahFontExtendedHeavy', 'sans-serif']
       },
       // prettier-ignore
       colors: {
@@ -40,7 +40,7 @@ module.exports = {
         'light-border': '#EFF3F4',
         'dark-line-reply': '#333639',
         'light-line-reply': '#CFD9DE',
-        'twitter-icon': '#D6D9DB',
+        'musicblah-icon': '#D6D9DB',
         'image-preview-hover': '#272C30',
       }
     }

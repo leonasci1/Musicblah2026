@@ -21,23 +21,30 @@ export function UserCard(user: UserCardProps): JSX.Element {
         className='accent-tab hover-animation grid grid-cols-[auto,1fr] gap-3 px-4
                    py-3 hover:bg-light-primary/5 dark:hover:bg-dark-primary/5'
       >
-        <UserTooltip avatar {...user} modal={modal}>
-          <UserAvatar src={photoURL} alt={name} username={username} />
+        {/* Usar modal=true para desabilitar tooltip com links e disableLink no avatar */}
+        <UserTooltip avatar {...user} modal>
+          <UserAvatar
+            src={photoURL}
+            alt={name}
+            username={username}
+            disableLink
+          />
         </UserTooltip>
         <div className='flex flex-col gap-1 truncate xs:overflow-visible'>
           <div className='flex items-center justify-between gap-2 truncate xs:overflow-visible'>
             <div className='flex flex-col justify-center truncate xs:overflow-visible xs:whitespace-normal'>
-              <UserTooltip {...user} modal={modal}>
+              <UserTooltip {...user} modal>
                 <UserName
                   className='-mb-1'
                   name={name}
                   username={username}
                   verified={verified}
+                  disableLink
                 />
               </UserTooltip>
               <div className='flex items-center gap-1 text-light-secondary dark:text-dark-secondary'>
-                <UserTooltip {...user} modal={modal}>
-                  <UserUsername username={username} />
+                <UserTooltip {...user} modal>
+                  <UserUsername username={username} disableLink />
                 </UserTooltip>
                 {follow && <UserFollowing userTargetId={id} />}
               </div>

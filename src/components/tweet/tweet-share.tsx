@@ -75,7 +75,7 @@ export function TweetShare({
                 className={viewTweet ? 'h-6 w-6' : 'h-5 w-5'}
                 iconName='ArrowUpTrayIcon'
               />
-              {!open && <ToolTip tip='Share' />}
+              {!open && <ToolTip tip='Compartilhar' />}
             </i>
           </Popover.Button>
           <AnimatePresence>
@@ -92,7 +92,7 @@ export function TweetShare({
                   onClick={preventBubbling(handleCopy(close))}
                 >
                   <HeroIcon iconName='LinkIcon' />
-                  Copy link to Tweet
+                  Copiar link do post
                 </Popover.Button>
                 {!tweetIsBookmarked ? (
                   <Popover.Button
@@ -103,7 +103,7 @@ export function TweetShare({
                     )}
                   >
                     <HeroIcon iconName='BookmarkIcon' />
-                    Bookmark
+                    Salvar
                   </Popover.Button>
                 ) : (
                   <Popover.Button
@@ -114,7 +114,7 @@ export function TweetShare({
                     )}
                   >
                     <HeroIcon iconName='BookmarkSlashIcon' />
-                    Remove Tweet from Bookmarks
+                    Remover dos Salvos
                   </Popover.Button>
                 )}
               </Popover.Panel>

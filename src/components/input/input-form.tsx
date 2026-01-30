@@ -146,7 +146,9 @@ export function InputForm({
                        placeholder:text-light-secondary dark:placeholder:text-dark-secondary'
             value={inputValue}
             placeholder={
-              reply || replyModal ? 'Tweet your reply' : "What's happening?"
+              reply || replyModal
+                ? 'Escreva sua resposta'
+                : 'O que está acontecendo?'
             }
             onBlur={handleShowHideNav(true)}
             minRows={loading ? 1 : modal && !isUploadingImages ? 3 : 1}
@@ -162,7 +164,7 @@ export function InputForm({
               className='cursor-pointer bg-main-accent px-4 py-1.5 font-bold text-white opacity-50'
               onClick={handleFocus}
             >
-              Reply
+              Responder
             </Button>
           )}
         </div>

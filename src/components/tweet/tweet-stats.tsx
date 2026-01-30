@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import cn from 'clsx';
 import { manageRetweet, manageLike } from '@lib/firebase/utils';
+import { useAuth } from '@lib/context/auth-context';
+import { createNotification } from '@lib/firebase/notifications';
 import { ViewTweetStats } from '@components/view/view-tweet-stats';
 import { TweetOption } from './tweet-option';
 import { TweetShare } from './tweet-share';
@@ -18,6 +20,8 @@ type TweetStatsProps = Pick<
   tweetId: string;
   viewTweet?: boolean;
   openModal?: () => void;
+  tweetOwnerId?: string; // ID do dono do tweet para notificação
+  tweetText?: string; // Texto do tweet para preview na notificação
 };
 
 export function TweetStats({
@@ -29,8 +33,11 @@ export function TweetStats({
   viewTweet,
   userRetweets,
   userReplies: totalReplies,
-  openModal
+  openModal,
+  tweetOwnerId,
+  tweetText
 }: TweetStatsProps): JSX.Element {
+  const { user } = useAuth();
   const totalLikes = userLikes.length;
   const totalTweets = userRetweets.length;
 
@@ -94,7 +101,7 @@ export function TweetStats({
           className='hover:text-accent-cyan focus-visible:text-accent-cyan'
           iconClassName='group-hover:bg-accent-cyan/10 group-active:bg-accent-cyan/20 
                          group-focus-visible:bg-accent-cyan/10 group-focus-visible:ring-accent-cyan/80'
-          tip='Reply'
+          tip='Responder'
           move={replyMove}
           stats={currentReplies}
           iconName='ChatBubbleOvalLeftIcon'
@@ -109,16 +116,28 @@ export function TweetStats({
           )}
           iconClassName='group-hover:bg-accent-cyan/10 group-active:bg-accent-cyan/20
                          group-focus-visible:bg-accent-cyan/10 group-focus-visible:ring-accent-cyan/80'
-          tip={tweetIsRetweeted ? 'Undo Retweet' : 'Retweet'}
+          tip={tweetIsRetweeted ? 'Desfazer repost' : 'Repostar'}
           move={tweetMove}
           stats={currentTweets}
           iconName='ArrowPathRoundedSquareIcon'
           viewTweet={viewTweet}
-          onClick={manageRetweet(
-            tweetIsRetweeted ? 'unretweet' : 'retweet',
-            userId,
-            tweetId
-          )}
+          onClick={async (): Promise<void> => {
+            await manageRetweet(
+              tweetIsRetweeted ? 'unretweet' : 'retweet',
+              userId,
+              tweetId
+            )();
+            // Notificar apenas ao repostar (não ao desfazer)
+            if (!tweetIsRetweeted && tweetOwnerId && user) {
+              void createNotification({
+                type: 'retweet',
+                toUserId: tweetOwnerId,
+                fromUser: user,
+                tweetId,
+                tweetText
+              });
+            }
+          }}
         />
         <TweetOption
           className={cn(
@@ -127,16 +146,28 @@ export function TweetStats({
           )}
           iconClassName='group-hover:bg-accent-purple/10 group-active:bg-accent-purple/20
                          group-focus-visible:bg-accent-purple/10 group-focus-visible:ring-accent-purple/80'
-          tip={tweetIsLiked ? 'Unlike' : 'Like'}
+          tip={tweetIsLiked ? 'Descurtir' : 'Curtir'}
           move={likeMove}
           stats={currentLikes}
           iconName='HeartIcon'
           viewTweet={viewTweet}
-          onClick={manageLike(
-            tweetIsLiked ? 'unlike' : 'like',
-            userId,
-            tweetId
-          )}
+          onClick={async (): Promise<void> => {
+            await manageLike(
+              tweetIsLiked ? 'unlike' : 'like',
+              userId,
+              tweetId
+            )();
+            // Notificar apenas ao curtir (não ao descurtir)
+            if (!tweetIsLiked && tweetOwnerId && user) {
+              void createNotification({
+                type: 'like',
+                toUserId: tweetOwnerId,
+                fromUser: user,
+                tweetId,
+                tweetText
+              });
+            }
+          }}
         />
         <TweetShare userId={userId} tweetId={tweetId} viewTweet={viewTweet} />
         {isOwner && (
@@ -144,7 +175,7 @@ export function TweetStats({
             className='hover:text-accent-cyan focus-visible:text-accent-cyan'
             iconClassName='group-hover:bg-accent-cyan/10 group-active:bg-accent-cyan/20 
                            group-focus-visible:bg-accent-cyan/10 group-focus-visible:ring-accent-cyan/80'
-            tip='Analytics'
+            tip='Análises'
             iconName='ChartPieIcon'
             disabled
           />

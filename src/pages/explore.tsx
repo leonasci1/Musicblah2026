@@ -1,200 +1,455 @@
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import cn from 'clsx';
-import { exploreData } from '@lib/data/explore-data';
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { query, where, orderBy, limit } from 'firebase/firestore';
+import { tweetsCollection } from '@lib/firebase/collections';
+import { useInfiniteScroll } from '@lib/hooks/useInfiniteScroll';
+import { useCollection } from '@lib/hooks/useCollection';
+import { useAuth } from '@lib/context/auth-context';
 import { HomeLayout, ProtectedLayout } from '@components/layout/common-layout';
 import { MainLayout } from '@components/layout/main-layout';
 import { SEO } from '@components/common/seo';
 import { MainContainer } from '@components/home/main-container';
 import { MainHeader } from '@components/home/main-header';
-import { HeroIcon } from '@components/ui/hero-icon';
-import { UserAvatar } from '@components/user/user-avatar';
+import { Tweet } from '@components/tweet/tweet';
 import { Loading } from '@components/ui/loading';
+import { SearchBar } from '@components/aside/search-bar';
+import { HeroIcon } from '@components/ui/hero-icon';
 import type { ReactElement, ReactNode } from 'react';
-import type { Genre } from '@lib/data/explore-data';
 
-// Tipo para os dados que vêm da API
-type SpotifyArtist = {
+// Tipo completo com dados do Spotify
+type SpotifyRecommendation = {
   id: string;
   name: string;
-  username: string;
-  listeners: string;
+  artist: string;
+  artistId: string;
   image: string;
-  popularity: number;
+  album: string;
+  duration: string;
+  previewUrl: string | null;
+  url: string;
+  reason: string;
 };
 
 export default function Explore(): JSX.Element {
-  const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null);
-  const [artists, setArtists] = useState<SpotifyArtist[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'forYou' | 'trending' | 'recent'>(
+    'forYou'
+  );
+  const [recommendations, setRecommendations] = useState<
+    SpotifyRecommendation[]
+  >([]);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSource, setAiSource] = useState<'gemini' | 'fallback'>('fallback');
+  const [aiMessage, setAiMessage] = useState<string>('');
 
-  const handleBack = (): void => {
-    setSelectedGenre(null);
-    setArtists([]);
+  // Estado para player de música
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const { user } = useAuth();
+
+  // Query para reviews do usuário (para IA) - sem usuário anexado
+  const { data: userReviews } = useCollection(
+    query(
+      tweetsCollection,
+      where('type', '==', 'review'),
+      where('createdBy', '==', user?.id ?? ''),
+      orderBy('createdAt', 'desc'),
+      limit(10)
+    ),
+    { allowNull: true, disabled: !user?.id }
+  );
+
+  // Query para reviews (com usuário anexado)
+  const { data: allReviews, loading: loadingReviews } = useInfiniteScroll(
+    tweetsCollection,
+    [where('type', '==', 'review'), orderBy('createdAt', 'desc')],
+    { includeUser: true, allowNull: true }
+  );
+
+  // Ordenar trending por número de likes
+  const sortedTrending = allReviews
+    ?.slice()
+    .sort((a, b) => (b.userLikes?.length || 0) - (a.userLikes?.length || 0))
+    .slice(0, 10);
+
+  // Reviews recentes (já ordenado por createdAt)
+  const recentReviews = allReviews?.slice(0, 20);
+
+  // Player de música
+  const handlePlay = (track: SpotifyRecommendation): void => {
+    if (!track.previewUrl) return;
+
+    if (playingId === track.id) {
+      audioRef.current?.pause();
+      setPlayingId(null);
+      return;
+    }
+
+    if (audioRef.current) audioRef.current.pause();
+
+    const audio = new Audio(track.previewUrl);
+    audio.volume = 0.4;
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    audio.play().catch(() => {});
+    audio.onended = (): void => setPlayingId(null);
+    audioRef.current = audio;
+    setPlayingId(track.id);
   };
 
-  // Busca os dados quando um gênero é selecionado
+  // Cleanup audio on unmount
   useEffect(() => {
-    if (!selectedGenre) return;
-
-    const fetchArtists = async (): Promise<void> => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `/api/spotify/explore?genre=${selectedGenre.id}`
-        );
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const data = await res.json();
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        setArtists(data);
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+    return () => {
+      if (audioRef.current) audioRef.current.pause();
     };
+  }, []);
 
-    void fetchArtists();
-  }, [selectedGenre]);
+  // Buscar recomendações da IA
+  const fetchRecommendations = async (): Promise<void> => {
+    setLoadingAI(true);
+    setAiError(null);
+
+    try {
+      // Enviar reviews se houver, senão API retorna genéricas
+      const res = await fetch('/api/gemini/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userReviews: userReviews ?? [] })
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const data = await res.json();
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (data.error) {
+        setAiError(data.error as string);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        setRecommendations(
+          (data.recommendations as SpotifyRecommendation[]) || []
+        );
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+        setAiSource(data.source || 'fallback');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+        setAiMessage(data.message || '');
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error fetching recommendations:', error);
+      setAiError('Erro ao buscar recomendações');
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
+  // Buscar recomendações quando trocar para aba "Para Você"
+  useEffect(() => {
+    if (activeTab === 'forYou' && recommendations.length === 0 && !loadingAI)
+      void fetchRecommendations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  const tabs = [
+    { id: 'forYou', label: 'Para Você', icon: 'SparklesIcon' },
+    { id: 'trending', label: 'Em Alta', icon: 'FireIcon' },
+    { id: 'recent', label: 'Recentes', icon: 'ClockIcon' }
+  ] as const;
 
   return (
     <MainContainer>
-      <SEO title='Explore / MusicBlah' />
+      <SEO title='Explorar / MusicBlah' />
 
-      <MainHeader
-        useMobileSidebar
-        title={selectedGenre ? selectedGenre.name : 'Explore'}
-        className='flex items-center gap-4'
-      >
-        {selectedGenre && (
-          <button
-            onClick={handleBack}
-            className='custom-button p-2 hover:bg-light-primary/10 dark:hover:bg-dark-primary/10'
-          >
-            <HeroIcon iconName='ArrowLeftIcon' className='h-5 w-5' />
-          </button>
-        )}
-      </MainHeader>
+      <MainHeader useMobileSidebar title='Explorar' />
 
-      <section className='mt-0.5 min-h-screen pb-20 xs:mt-0'>
-        <AnimatePresence mode='wait'>
-          {!selectedGenre ? (
-            // VIEW 1: GRID DE GÊNEROS (Novo Design)
-            <motion.div
-              key='grid'
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className='grid grid-cols-1 gap-4 p-4 sm:grid-cols-2'
+      <section className='mt-0.5 min-h-screen pb-20'>
+        {/* Barra de Busca */}
+        <div className='border-b border-light-border p-4 dark:border-dark-border'>
+          <SearchBar />
+        </div>
+
+        {/* Tabs */}
+        <div className='flex border-b border-light-border dark:border-dark-border'>
+          {tabs.map((tab) => (
+            <button
+              type='button'
+              key={tab.id}
+              onClick={(): void => setActiveTab(tab.id)}
+              className={`flex-1 py-4 text-center text-sm font-bold transition-colors
+                ${
+                  activeTab === tab.id
+                    ? 'border-b-2 border-main-accent text-main-accent'
+                    : 'text-light-secondary hover:bg-light-primary/10 dark:text-dark-secondary dark:hover:bg-dark-primary/10'
+                }
+              `}
             >
-              {exploreData.map((genre) => (
-                <button
-                  key={genre.id}
-                  onClick={() => setSelectedGenre(genre)}
-                  className={cn(
-                    `group relative flex h-48 w-full flex-col overflow-hidden rounded-2xl text-left shadow-md
-                     transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-95`
-                  )}
-                >
-                  {/* Imagem de Fundo com efeito de zoom no hover */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={genre.imageUrl}
-                    alt={genre.name}
-                    className='absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110'
-                  />
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-                  {/* Overlay Escuro e Texto */}
-                  <div className='absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6'>
-                    <h3 className='text-2xl font-bold text-white drop-shadow-md'>
-                      {genre.name}
-                    </h3>
-                  </div>
-                </button>
-              ))}
-            </motion.div>
-          ) : (
-            // VIEW 2: LISTA DE ARTISTAS (Mantida a estrutura anterior)
-            <motion.div
-              key='list'
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              {/* Genre Banner - Agora usa a imagem do gênero também */}
-              <div className='relative mb-4 h-40 w-full overflow-hidden'>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={selectedGenre.imageUrl}
-                  alt={selectedGenre.name}
-                  className='absolute inset-0 h-full w-full object-cover'
+        {/* Conteúdo */}
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          {/* TAB: Para Você (IA) */}
+          {activeTab === 'forYou' && (
+            <div>
+              <div className='flex items-center gap-2 border-b border-light-border p-4 dark:border-dark-border'>
+                <HeroIcon
+                  iconName='SparklesIcon'
+                  className='h-5 w-5 text-purple-500'
                 />
-                <div className='absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 to-transparent p-6'>
-                  <h2 className='mb-1 text-3xl font-bold text-white'>
-                    {selectedGenre.name}
+                <div>
+                  <h2 className='font-bold text-light-primary dark:text-dark-primary'>
+                    Recomendado para Você
                   </h2>
-                  <p className='font-medium text-white/80'>
-                    Trending Artists on Spotify
+                  <p className='text-sm text-light-secondary dark:text-dark-secondary'>
+                    IA analisa suas avaliações e sugere músicas
                   </p>
                 </div>
               </div>
 
-              {loading ? (
-                <Loading className='mt-10' />
-              ) : (
-                <div className='flex flex-col'>
-                  {artists.map((artist, index) => (
-                    <Link href={`/user/${artist.id}`} key={artist.id}>
-                      <a className='hover-animation flex items-center gap-4 border-b border-light-border px-4 py-3 hover:bg-light-primary/5 dark:border-dark-border dark:hover:bg-dark-primary/5'>
-                        <span className='w-4 text-center font-bold text-light-secondary dark:text-dark-secondary'>
-                          {index + 1}
-                        </span>
-                        <UserAvatar
-                          src={artist.image}
-                          alt={artist.name}
-                          size={50}
-                          username={artist.name}
-                          disableLink
+              {loadingAI ? (
+                <div className='flex flex-col items-center justify-center py-12'>
+                  <Loading className='mb-4' />
+                  <p className='text-sm text-light-secondary dark:text-dark-secondary'>
+                    Analisando seu gosto musical...
+                  </p>
+                </div>
+              ) : aiError ? (
+                <div className='p-8 text-center'>
+                  <HeroIcon
+                    iconName='MusicalNoteIcon'
+                    className='mx-auto mb-4 h-16 w-16 text-light-secondary dark:text-dark-secondary'
+                  />
+                  <h3 className='mb-2 text-xl font-bold text-light-primary dark:text-dark-primary'>
+                    {aiError}
+                  </h3>
+                  <p className='text-light-secondary dark:text-dark-secondary'>
+                    Avalie algumas músicas e volte aqui para recomendações
+                    personalizadas!
+                  </p>
+                </div>
+              ) : recommendations.length > 0 ? (
+                <div className='divide-y divide-light-border dark:divide-dark-border'>
+                  {/* Status da IA */}
+                  <div
+                    className={`border-b border-light-border px-4 py-3 dark:border-dark-border ${
+                      aiSource === 'gemini'
+                        ? 'bg-green-500/10'
+                        : 'bg-main-accent/5'
+                    }`}
+                  >
+                    <div className='flex items-center justify-center gap-2'>
+                      {aiSource === 'gemini' ? (
+                        <HeroIcon
+                          iconName='SparklesIcon'
+                          className='h-4 w-4 text-green-500'
                         />
-                        <div className='flex min-w-0 flex-col'>
-                          <div className='flex items-center gap-1'>
-                            <span className='truncate font-bold text-light-primary dark:text-dark-primary'>
-                              {artist.name}
-                            </span>
-                            {artist.popularity > 80 && (
-                              <HeroIcon
-                                iconName='CheckBadgeIcon'
-                                className='h-4 w-4 shrink-0 text-main-accent'
-                                solid
-                              />
-                            )}
-                          </div>
-                          <span className='truncate text-sm text-light-secondary dark:text-dark-secondary'>
-                            {artist.listeners} followers
-                          </span>
-                        </div>
-
-                        <button className='ml-auto shrink-0 rounded-full border border-light-line-reply px-4 py-1.5 font-bold text-main-accent hover:bg-main-accent/10 dark:border-light-secondary'>
-                          View
-                        </button>
-                      </a>
-                    </Link>
-                  ))}
-
-                  {artists.length === 0 && (
-                    <div className='p-8 text-center text-light-secondary dark:text-dark-secondary'>
-                      No artists found for this genre.
+                      ) : (
+                        <HeroIcon
+                          iconName='MusicalNoteIcon'
+                          className='h-4 w-4 text-main-accent'
+                        />
+                      )}
+                      <p className='text-center text-sm text-light-secondary dark:text-dark-secondary'>
+                        {aiMessage ||
+                          (aiSource === 'gemini'
+                            ? 'Recomendações da IA baseadas nas suas reviews!'
+                            : 'Avalie músicas para ter sugestões personalizadas.')}
+                      </p>
                     </div>
-                  )}
+                  </div>
+                  {recommendations.map((track) => (
+                    <div
+                      key={track.id}
+                      className='group flex items-center gap-3 p-3 transition-colors hover:bg-light-primary/5 dark:hover:bg-dark-primary/5'
+                    >
+                      {/* Capa com botão de play */}
+                      <div
+                        className='relative h-14 w-14 flex-shrink-0 cursor-pointer'
+                        onClick={(): void => handlePlay(track)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={track.image}
+                          alt={track.name}
+                          className={`h-full w-full rounded-lg object-cover shadow-md transition-all duration-300
+                            ${
+                              playingId === track.id
+                                ? 'brightness-50'
+                                : 'group-hover:brightness-75'
+                            }`}
+                        />
+                        {/* Ícone de play/pause */}
+                        {track.previewUrl && (
+                          <div
+                            className={`absolute inset-0 flex items-center justify-center text-white
+                              ${
+                                playingId === track.id
+                                  ? 'opacity-100'
+                                  : 'opacity-0 group-hover:opacity-100'
+                              }`}
+                          >
+                            <HeroIcon
+                              iconName={
+                                playingId === track.id
+                                  ? 'PauseIcon'
+                                  : 'PlayIcon'
+                              }
+                              className='h-6 w-6 drop-shadow-lg'
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info da música */}
+                      <div className='min-w-0 flex-1'>
+                        <a
+                          href={track.url}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className='block'
+                        >
+                          <p
+                            className={`truncate text-sm font-bold transition-colors
+                            ${
+                              playingId === track.id
+                                ? 'text-[#1DB954]'
+                                : 'text-light-primary hover:text-main-accent dark:text-dark-primary'
+                            }`}
+                          >
+                            {track.name}
+                          </p>
+                          <p className='truncate text-xs text-light-secondary dark:text-dark-secondary'>
+                            {track.artist}
+                          </p>
+                        </a>
+                        <p className='mt-0.5 truncate text-xs italic text-light-secondary dark:text-dark-secondary'>
+                          {track.reason}
+                        </p>
+                      </div>
+
+                      {/* Indicador tocando */}
+                      {playingId === track.id && (
+                        <span className='animate-pulse text-xs font-semibold text-[#1DB954]'>
+                          ▶
+                        </span>
+                      )}
+
+                      {/* Duração */}
+                      <span className='text-xs text-light-secondary dark:text-dark-secondary'>
+                        {track.duration}
+                      </span>
+                    </div>
+                  ))}
+                  <div className='border-t border-light-border p-4 text-center dark:border-dark-border'>
+                    <button
+                      type='button'
+                      onClick={(): void => {
+                        setRecommendations([]);
+                        void fetchRecommendations();
+                      }}
+                      disabled={loadingAI}
+                      className='rounded-full bg-main-accent px-6 py-2.5 text-sm font-bold text-white transition hover:brightness-90 disabled:opacity-50'
+                    >
+                      {loadingAI ? 'Buscando...' : 'Novas Recomendações'}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* TAB: Em Alta */}
+          {activeTab === 'trending' && (
+            <div>
+              <div className='flex items-center gap-2 border-b border-light-border p-4 dark:border-dark-border'>
+                <HeroIcon
+                  iconName='FireIcon'
+                  className='h-5 w-5 text-orange-500'
+                />
+                <div>
+                  <h2 className='font-bold text-light-primary dark:text-dark-primary'>
+                    Reviews em Destaque
+                  </h2>
+                  <p className='text-sm text-light-secondary dark:text-dark-secondary'>
+                    As avaliações mais curtidas da comunidade
+                  </p>
+                </div>
+              </div>
+
+              {loadingReviews ? (
+                <Loading className='mt-10' />
+              ) : sortedTrending && sortedTrending.length > 0 ? (
+                <div>
+                  {sortedTrending.map((tweet) => (
+                    <Tweet key={tweet.id} {...tweet} />
+                  ))}
+                </div>
+              ) : (
+                <div className='p-8 text-center'>
+                  <HeroIcon
+                    iconName='MusicalNoteIcon'
+                    className='mx-auto mb-4 h-16 w-16 text-light-secondary dark:text-dark-secondary'
+                  />
+                  <h3 className='mb-2 text-xl font-bold text-light-primary dark:text-dark-primary'>
+                    Nenhuma review ainda
+                  </h3>
+                  <p className='text-light-secondary dark:text-dark-secondary'>
+                    Seja o primeiro a avaliar uma música ou álbum!
+                  </p>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+
+          {/* TAB: Recentes */}
+          {activeTab === 'recent' && (
+            <div>
+              <div className='flex items-center gap-2 border-b border-light-border p-4 dark:border-dark-border'>
+                <HeroIcon
+                  iconName='ClockIcon'
+                  className='h-5 w-5 text-blue-500'
+                />
+                <div>
+                  <h2 className='font-bold text-light-primary dark:text-dark-primary'>
+                    Descobertas Recentes
+                  </h2>
+                  <p className='text-sm text-light-secondary dark:text-dark-secondary'>
+                    O que a comunidade está ouvindo agora
+                  </p>
+                </div>
+              </div>
+
+              {loadingReviews ? (
+                <Loading className='mt-10' />
+              ) : recentReviews && recentReviews.length > 0 ? (
+                <div>
+                  {recentReviews.map((tweet) => (
+                    <Tweet key={tweet.id} {...tweet} />
+                  ))}
+                </div>
+              ) : (
+                <div className='p-8 text-center'>
+                  <HeroIcon
+                    iconName='MusicalNoteIcon'
+                    className='mx-auto mb-4 h-16 w-16 text-light-secondary dark:text-dark-secondary'
+                  />
+                  <h3 className='mb-2 text-xl font-bold text-light-primary dark:text-dark-primary'>
+                    Nenhuma review ainda
+                  </h3>
+                  <p className='text-light-secondary dark:text-dark-secondary'>
+                    Seja o primeiro a avaliar uma música ou álbum!
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </motion.div>
       </section>
     </MainContainer>
   );

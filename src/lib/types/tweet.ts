@@ -14,10 +14,24 @@ export type Track = {
   id: string;
   name: string;
   artist: string;
+  artistId?: string; // ID do artista para rastreamento
   image: string;
   album: string;
   duration: string;
   previewUrl: string | null;
+  isIndependent?: boolean; // Indica se é música independente
+  popularity?: number; // Score de popularidade do Spotify (0-100)
+};
+
+export type Lyric = {
+  text: string;
+  backgroundColor: string;
+  trackId: string;
+  trackName: string;
+  artistName: string;
+  albumName: string;
+  albumImage: string;
+  spotifyUrl: string;
 };
 
 export type Tweet = {
@@ -31,10 +45,11 @@ export type Tweet = {
   updatedAt: Timestamp | null;
   userReplies: number;
   userRetweets: string[];
-  type?: 'review' | 'tweet';
+  type?: 'review' | 'tweet' | 'lyric';
   rating?: number;
   album?: Album;
   track?: Track;
+  lyric?: Lyric;
 };
 
 export type TweetWithUser = Tweet & { user: User };

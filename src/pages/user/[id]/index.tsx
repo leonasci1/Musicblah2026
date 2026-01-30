@@ -21,8 +21,9 @@ export default function UserTweets(): JSX.Element {
     query: { id }
   } = useRouter();
 
-  // FIX 1: Evita erro 400. Se não tiver ID ainda, usa 'loading' que não quebra o banco.
-  const userId = (id as string) || user?.id || 'loading';
+  // O user vem do contexto e contém o ID real do Firebase
+  // O 'id' da URL é o username, não o ID do documento
+  const userId = user?.id || 'loading';
 
   const { username, pinnedTweet } = user ?? {};
 
@@ -35,40 +36,46 @@ export default function UserTweets(): JSX.Element {
     }
   );
 
-  // FIX 2: Removi "where('parent', '==', null)". Baixamos tudo do usuário.
+  // Buscar tweets do usuário pelo ID real
   const { data: ownerTweets, loading: ownerLoading } = useCollection(
     query(tweetsCollection, where('createdBy', '==', userId)),
-    { includeUser: true, allowNull: true }
+    { includeUser: true, allowNull: true, disabled: !user?.id }
   );
 
   const { data: peopleTweets, loading: peopleLoading } = useCollection(
     query(tweetsCollection, where('userRetweets', 'array-contains', userId)),
-    { includeUser: true, allowNull: true }
+    { includeUser: true, allowNull: true, disabled: !user?.id }
   );
 
   const mergedTweets = mergeData(true, ownerTweets, peopleTweets);
 
-  // FIX 3: Filtramos e ordenamos aqui no código (Client-Side)
-  // Isso resolve o "failed-precondition" e mostra os posts na ordem certa.
+  // Filtramos posts (sem parent = não é reply)
+  // Ordenamos por data de criação (mais recente primeiro)
+  // Removemos o post fixado da lista normal (será mostrado separadamente)
   const postsOnly = mergedTweets
-    ?.filter((tweet) => !tweet.parent)
-    .sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
+    ?.filter((tweet) => !tweet.parent && tweet.id !== pinnedTweet)
+    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+  // Se ainda não tem user, mostra loading
+  const isLoading = !user?.id || ownerLoading || peopleLoading;
 
   return (
     <section>
-      {ownerLoading || peopleLoading ? (
+      {isLoading ? (
         <Loading className='mt-5' />
-      ) : !postsOnly || postsOnly.length === 0 ? (
+      ) : (!postsOnly || postsOnly.length === 0) && !pinnedData ? (
         <StatsEmpty
           title={`@${username as string} ainda não postou`}
           description='Quando postarem, os posts aparecerão aqui.'
         />
       ) : (
         <AnimatePresence mode='popLayout'>
+          {/* Post fixado sempre primeiro */}
           {pinnedData && (
             <Tweet pinned {...pinnedData} key={`pinned-${pinnedData.id}`} />
           )}
-          {postsOnly.map((tweet) => (
+          {/* Demais posts em ordem cronológica */}
+          {postsOnly?.map((tweet) => (
             <Tweet {...tweet} profile={user} key={tweet.id} />
           ))}
         </AnimatePresence>

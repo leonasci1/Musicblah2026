@@ -51,9 +51,9 @@ export function EditProfileModal({
         useActionButton
         disableSticky
         iconName='XMarkIcon'
-        tip='Close'
+        tip='Fechar'
         className='absolute flex w-full items-center gap-6 rounded-tl-2xl'
-        title='Edit profile'
+        title='Editar perfil'
         action={closeModal}
       >
         <div className='ml-auto flex items-center gap-3'>
@@ -65,7 +65,7 @@ export function EditProfileModal({
             disabled={loading}
           >
             <HeroIcon className='h-5 w-5' iconName={'ArrowPathIcon'} />
-            <ToolTip tip='Reset' />
+            <ToolTip tip='Redefinir' />
           </Button>
           <Button
             className='bg-light-primary py-1 px-4 font-bold text-white focus-visible:bg-light-primary/90 
@@ -76,7 +76,7 @@ export function EditProfileModal({
             disabled={!!inputNameError}
             loading={loading}
           >
-            Save
+            Salvar
           </Button>
         </div>
       </MainHeader>
@@ -117,7 +117,7 @@ export function EditProfileModal({
                 className='hover-animation h-6 w-6 text-dark-primary group-hover:text-white'
                 iconName='CameraIcon'
               />
-              <ToolTip groupInner tip='Add photo' />
+              <ToolTip groupInner tip='Adicionar foto' />
             </Button>
             {coverPhotoURL && (
               <Button
@@ -129,7 +129,7 @@ export function EditProfileModal({
                   className='hover-animation h-6 w-6 text-dark-primary group-hover:text-white'
                   iconName='XMarkIcon'
                 />
-                <ToolTip groupInner tip='Remove photo' />
+                <ToolTip groupInner tip='Remover foto' />
               </Button>
             )}
           </div>
@@ -166,7 +166,7 @@ export function EditProfileModal({
                   className='hover-animation h-6 w-6 text-dark-primary group-hover:text-white'
                   iconName='CameraIcon'
                 />
-                <ToolTip groupInner tip='Add photo' />
+                <ToolTip groupInner tip='Adicionar foto' />
               </Button>
             </div>
           </div>
@@ -176,7 +176,7 @@ export function EditProfileModal({
                        py-2 hover:bg-light-primary/10 active:bg-light-primary/20 disabled:brightness-100
                        dark:hover:bg-dark-primary/10 dark:active:bg-dark-primary/20'
           >
-            <span className='mx-2 text-xl'>Switch to professional</span>
+            <span className='mx-2 text-xl'>Mudar para profissional</span>
             <i>
               <HeroIcon
                 className='h-6 w-6 text-light-secondary dark:text-dark-secondary'

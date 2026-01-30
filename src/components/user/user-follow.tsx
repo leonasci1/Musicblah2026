@@ -29,8 +29,8 @@ export function UserFollow({ type }: UserFollowProps): JSX.Element {
   return (
     <>
       <SEO
-        title={`People ${
-          type === 'following' ? 'followed by' : 'following'
+        title={`Pessoas ${
+          type === 'following' ? 'seguidas por' : 'que seguem'
         } ${name} (@${username}) / MusicBlah`}
       />
       <UserCards follow data={data} type={type} loading={loading} />

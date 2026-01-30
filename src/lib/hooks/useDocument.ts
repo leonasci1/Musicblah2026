@@ -35,6 +35,22 @@ export function useDocument<T>(
   const { includeUser, allowNull, disabled } = options ?? {};
 
   useEffect(() => {
+    const populateUser = async (currentData: DataWithRef<T>): Promise<void> => {
+      try {
+        const userData = await getDoc(
+          doc(usersCollection, currentData.createdBy)
+        );
+        const dataWithUser = { ...currentData, user: userData.data() };
+
+        setData(dataWithUser);
+        setLoading(false);
+      } catch (error) {
+        console.error('❌ Erro ao buscar usuário:', error);
+        // Se falhar, ainda mostra o dado sem user
+        setData(currentData as any);
+        setLoading(false);
+      }
+    };
     if (disabled) {
       setData(null);
       setLoading(false);
@@ -44,18 +60,15 @@ export function useDocument<T>(
     setData(null);
     setLoading(true);
 
-    const populateUser = async (currentData: DataWithRef<T>): Promise<void> => {
-      const userData = await getDoc(
-        doc(usersCollection, currentData.createdBy)
-      );
-      const dataWithUser = { ...currentData, user: userData.data() };
-
-      setData(dataWithUser);
-      setLoading(false);
-    };
-
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       const data = snapshot.data({ serverTimestamps: 'estimate' });
+
+      console.log('📄 useDocument snapshot:', {
+        docPath: docRef.path,
+        hasData: !!data,
+        dataKeys: data ? Object.keys(data) : [],
+        createdBy: data?.createdBy
+      });
 
       if (allowNull && !data) {
         setData(null);

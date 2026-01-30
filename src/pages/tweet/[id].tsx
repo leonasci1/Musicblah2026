@@ -31,10 +31,11 @@ export default function TweetId(): JSX.Element {
 
   const viewTweetRef = useRef<HTMLElement>(null);
 
+  // Query das replies - sempre executa quando temos um ID válido
   const { data: repliesData, loading: repliesLoading } = useCollection(
     query(
       tweetsCollection,
-      where('parent.id', '==', id),
+      where('parent.id', '==', (id as string) || ''),
       orderBy('createdAt', 'desc')
     ),
     { includeUser: true, allowNull: true }
@@ -44,6 +45,19 @@ export default function TweetId(): JSX.Element {
 
   const imagesLength = images?.length ?? 0;
   const parentId = tweetData?.parent?.id;
+
+  console.log('🔍 [id].tsx - Dados carregados:', {
+    tweetId: tweetData?.id,
+    tweetLoading,
+    repliesLoading,
+    repliesCount: repliesData?.length ?? 0,
+    tweetType: tweetData?.type,
+    tweetText: text?.substring(0, 30),
+    hasAlbum: !!tweetData?.album,
+    hasTrack: !!tweetData?.track,
+    hasRating: !!tweetData?.rating,
+    fullTweetData: JSON.stringify(tweetData, null, 2).substring(0, 500)
+  });
 
   const pageTitle = tweetData
     ? `${tweetData.user.name} on MusicBlah: "${text ?? ''}${
@@ -61,10 +75,13 @@ export default function TweetId(): JSX.Element {
       <section>
         {tweetLoading ? (
           <Loading className='mt-5' />
-        ) : !tweetData ? (
+        ) : !tweetData || !tweetData.id ? (
           <>
             <SEO title='Post not found' />
-            <Error message='Post not found' />
+            <Error message='Post não encontrado ou não foi carregado' />
+            <div className='mt-4 px-4 text-sm text-gray-400'>
+              ID: {id} | Carregando: {tweetLoading ? 'sim' : 'não'}
+            </div>
           </>
         ) : (
           <>
@@ -75,17 +92,28 @@ export default function TweetId(): JSX.Element {
                 viewTweetRef={viewTweetRef}
               />
             )}
+            {/* DEBUG: Verificar se tweetData existe */}
+            {!tweetData.id && (
+              <div className='mb-4 rounded border border-red-500 bg-red-500/20 p-4 text-red-400'>
+                ⚠️ Erro: Tweet sem ID. Dados:{' '}
+                {JSON.stringify(tweetData).substring(0, 200)}
+              </div>
+            )}
             <ViewTweet viewTweetRef={viewTweetRef} {...tweetData} />
-            {tweetData &&
-              (repliesLoading ? (
-                <Loading className='mt-5' />
-              ) : (
-                <AnimatePresence mode='popLayout'>
-                  {repliesData?.map((tweet) => (
-                    <Tweet {...tweet} key={tweet.id} />
-                  ))}
-                </AnimatePresence>
-              ))}
+            {/* Seção de Replies */}
+            {repliesLoading ? (
+              <Loading className='mt-5' />
+            ) : repliesData && repliesData.length > 0 ? (
+              <AnimatePresence mode='popLayout'>
+                {repliesData.map((tweet) => (
+                  <Tweet {...tweet} key={tweet.id} />
+                ))}
+              </AnimatePresence>
+            ) : (
+              <div className='border-t border-light-border px-4 py-8 text-center text-gray-500 dark:border-dark-border'>
+                <p>Sem respostas ainda. Seja o primeiro a responder! 🎵</p>
+              </div>
+            )}
           </>
         )}
       </section>

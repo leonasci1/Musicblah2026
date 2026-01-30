@@ -116,6 +116,7 @@ export function ImagePreview({
       <AnimatePresence mode='popLayout'>
         {imagesPreview.map(({ id, src, alt }, index) => {
           const isVideo = imagesPreview[index].type?.includes('video');
+          const uniqueKey = id || `image-${index}-${src?.slice(-10) || index}`;
 
           return (
             <motion.button
@@ -134,7 +135,7 @@ export function ImagePreview({
               {...variants}
               onClick={preventBubbling(handleSelectedImage(index, isVideo))}
               layout={!isTweet ? true : false}
-              key={id}
+              key={uniqueKey}
             >
               {isVideo ? (
                 <>

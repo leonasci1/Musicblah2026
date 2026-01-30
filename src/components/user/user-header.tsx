@@ -76,16 +76,16 @@ export function UserHeader(): JSX.Element {
               : isInTweetPage
               ? totalTweets
                 ? `${totalTweets} ${`Post${isPlural(totalTweets)}`}`
-                : 'No Posts'
+                : 'Sem Posts'
               : currentPage === 'media'
               ? totalPhotos
-                ? `${totalPhotos} Photo${isPlural(totalPhotos)} & GIF${isPlural(
+                ? `${totalPhotos} Foto${isPlural(totalPhotos)} e GIF${isPlural(
                     totalPhotos
                   )}`
-                : 'No Photo & GIF'
+                : 'Sem Fotos e GIFs'
               : totalLikes
-              ? `${totalLikes} Like${isPlural(totalLikes)}`
-              : 'No Like'}
+              ? `${totalLikes} Curtida${isPlural(totalLikes)}`
+              : 'Sem Curtidas'}
           </p>
         </motion.div>
       )}

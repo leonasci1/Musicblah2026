@@ -26,7 +26,7 @@ export default function Trends(): JSX.Element {
                      active:bg-light-primary/20 dark:hover:bg-dark-primary/10 dark:active:bg-dark-primary/20'
         >
           <HeroIcon className='h-5 w-5' iconName='Cog8ToothIcon' />
-          <ToolTip tip='Settings' />
+          <ToolTip tip='Configurações' />
         </Button>
       </MainHeader>
 
