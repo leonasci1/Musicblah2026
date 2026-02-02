@@ -79,7 +79,11 @@ export function FriendsListening(): JSX.Element | null {
             if (timeSinceUpdate > 300000) continue; // Mais de 5 min = provavelmente parou
 
             const track = friendData.currentlyPlaying.track;
-            if (!track) continue;
+            console.log('🎵 Track data:', track);
+            if (!track) {
+              console.log('❌ Track é null, pulando...');
+              continue;
+            }
 
             playingFriends.push({
               id: friendId,
