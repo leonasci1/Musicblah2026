@@ -130,8 +130,20 @@ export function FriendsListening(): JSX.Element | null {
     return () => clearInterval(interval);
   }, [user?.id]);
 
+  console.log(
+    '🎵 RENDER - isLoading:',
+    isLoading,
+    'friendsPlaying:',
+    friendsPlaying.length
+  );
+
   // Não mostrar se não há amigos ouvindo
-  if (!isLoading && friendsPlaying.length === 0) return null;
+  if (!isLoading && friendsPlaying.length === 0) {
+    console.log('🎵 RENDER - Retornando null (sem amigos ouvindo)');
+    return null;
+  }
+
+  console.log('🎵 RENDER - Renderizando componente!');
 
   return (
     <section className='rounded-2xl bg-main-sidebar-background'>
