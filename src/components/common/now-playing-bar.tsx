@@ -25,9 +25,9 @@ export function NowPlayingBar(): JSX.Element | null {
     : 0;
 
   return (
-    // Em mobile (xs), fica acima da barra de navegação (bottom-14)
+    // Em mobile, fica acima da barra de navegação (bottom-16 = 64px)
     // Em desktop (xs:), fica no rodapé normal (bottom-0)
-    <div className='fixed bottom-14 left-0 right-0 z-40 border-t border-[#1DB954]/30 bg-main-background/95 backdrop-blur-md xs:bottom-0 xs:z-50'>
+    <div className='fixed bottom-16 left-0 right-0 z-40 border-t border-[#1DB954]/30 bg-main-background/95 backdrop-blur-md xs:bottom-0 xs:z-50'>
       {/* Barra de progresso no topo */}
       <div className='h-1 w-full bg-[#1DB954]/20'>
         <div
