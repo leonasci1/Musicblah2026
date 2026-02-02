@@ -101,13 +101,36 @@ export default async function handler(
   }
 }
 
-// Fallback para lyrics.ovh
+// Fallback: Vagalume primeiro (melhor para BR), depois lyrics.ovh
 async function fallbackToLyricsOvh(
   artist: string,
   track: string,
   res: NextApiResponse
 ) {
   try {
+    // 1. Tenta Vagalume primeiro (excelente para músicas brasileiras!)
+    const vagalumeUrl = `https://api.vagalume.com.br/search.php?art=${encodeURIComponent(
+      artist
+    )}&mus=${encodeURIComponent(track)}`;
+
+    const vagalumeResponse = await fetch(vagalumeUrl);
+
+    if (vagalumeResponse.ok) {
+      const vagalumeData = await vagalumeResponse.json();
+
+      if (vagalumeData.type !== 'notfound' && vagalumeData.mus?.length > 0) {
+        const song = vagalumeData.mus[0];
+        return res.status(200).json({
+          lyrics: song.text,
+          source: 'vagalume',
+          artist: vagalumeData.art?.name || artist,
+          track: song.name,
+          translation: song.translate?.[0]?.text || null
+        });
+      }
+    }
+
+    // 2. Se não achou no Vagalume, tenta lyrics.ovh
     const response = await fetch(
       `https://api.lyrics.ovh/v1/${encodeURIComponent(
         artist
@@ -119,6 +142,32 @@ async function fallbackToLyricsOvh(
       const simplifiedArtist = artist.split(/[(&,]/)[0].trim();
       const simplifiedTrack = track.split(/[(&,\-\(]/)[0].trim();
 
+      // Tenta Vagalume simplificado
+      const vagalumeAltUrl = `https://api.vagalume.com.br/search.php?art=${encodeURIComponent(
+        simplifiedArtist
+      )}&mus=${encodeURIComponent(simplifiedTrack)}`;
+
+      const vagalumeAltResponse = await fetch(vagalumeAltUrl);
+
+      if (vagalumeAltResponse.ok) {
+        const vagalumeAltData = await vagalumeAltResponse.json();
+
+        if (
+          vagalumeAltData.type !== 'notfound' &&
+          vagalumeAltData.mus?.length > 0
+        ) {
+          const song = vagalumeAltData.mus[0];
+          return res.status(200).json({
+            lyrics: song.text,
+            source: 'vagalume',
+            artist: vagalumeAltData.art?.name || simplifiedArtist,
+            track: song.name,
+            translation: song.translate?.[0]?.text || null
+          });
+        }
+      }
+
+      // Tenta lyrics.ovh simplificado
       const altResponse = await fetch(
         `https://api.lyrics.ovh/v1/${encodeURIComponent(
           simplifiedArtist
@@ -145,7 +194,7 @@ async function fallbackToLyricsOvh(
       source: 'lyrics.ovh'
     });
   } catch (error) {
-    console.error('Erro lyrics.ovh fallback:', error);
+    console.error('Erro fallback letras:', error);
     return res.status(500).json({
       error: 'Erro ao buscar letra',
       lyrics: null
