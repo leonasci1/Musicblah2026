@@ -52,18 +52,10 @@ export function FriendsListening(): JSX.Element | null {
         // 2. Para cada pessoa que sigo, verificar se tem música tocando
         const playingFriends: FriendPlaying[] = [];
 
-        console.log('🎵 FriendsListening: Buscando amigos...', followingIds);
-
         for (const friendId of followingIds) {
           try {
             const friendDoc = await getDoc(doc(db, 'users', friendId));
             const friendData = friendDoc.data();
-
-            console.log(`🎵 Amigo ${friendId}:`, {
-              hasCurrentlyPlaying: !!friendData?.currentlyPlaying,
-              isPlaying: friendData?.currentlyPlaying?.isPlaying,
-              track: friendData?.currentlyPlaying?.track?.name
-            });
 
             // Verificar se tem currentlyPlaying no Firestore
             if (!friendData?.currentlyPlaying?.isPlaying) continue;
@@ -71,19 +63,10 @@ export function FriendsListening(): JSX.Element | null {
             // Verificar se a atualização é recente (últimos 5 minutos)
             const updatedAt = friendData.currentlyPlaying.updatedAt || 0;
             const timeSinceUpdate = Date.now() - updatedAt;
-            console.log(
-              `🎵 Tempo desde atualização: ${Math.round(
-                timeSinceUpdate / 1000
-              )}s`
-            );
             if (timeSinceUpdate > 300000) continue; // Mais de 5 min = provavelmente parou
 
             const track = friendData.currentlyPlaying.track;
-            console.log('🎵 Track data:', track);
-            if (!track) {
-              console.log('❌ Track é null, pulando...');
-              continue;
-            }
+            if (!track) continue;
 
             playingFriends.push({
               id: friendId,
@@ -97,10 +80,6 @@ export function FriendsListening(): JSX.Element | null {
                 spotifyUrl: track.spotifyUrl
               }
             });
-            console.log(
-              '🎵 Adicionado ao array! Total:',
-              playingFriends.length
-            );
           } catch (e) {
             // Ignorar erros individuais
             console.warn(`Erro ao buscar música de ${friendId}:`, e);
@@ -110,11 +89,6 @@ export function FriendsListening(): JSX.Element | null {
           if (playingFriends.length >= 5) break;
         }
 
-        console.log(
-          '🎵 Total amigos ouvindo:',
-          playingFriends.length,
-          playingFriends
-        );
         setFriendsPlaying(playingFriends);
       } catch (error) {
         console.error('Erro ao buscar amigos ouvindo:', error);
@@ -130,20 +104,10 @@ export function FriendsListening(): JSX.Element | null {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  console.log(
-    '🎵 RENDER - isLoading:',
-    isLoading,
-    'friendsPlaying:',
-    friendsPlaying.length
-  );
-
   // Não mostrar se não há amigos ouvindo
   if (!isLoading && friendsPlaying.length === 0) {
-    console.log('🎵 RENDER - Retornando null (sem amigos ouvindo)');
     return null;
   }
-
-  console.log('🎵 RENDER - Renderizando componente!');
 
   return (
     <section className='rounded-2xl bg-main-sidebar-background'>

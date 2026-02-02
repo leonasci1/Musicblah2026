@@ -14,6 +14,7 @@ type FriendPlaying = {
     name: string;
     artist: string;
     image: string | null;
+    spotifyUrl: string;
   };
 };
 
@@ -40,7 +41,7 @@ export function FriendsListeningMobile(): JSX.Element | null {
 
         const followingIds = followingSnap.docs.map((d) => d.id);
 
-        // DEBUG: Adicionar o próprio usuário para testar
+        // Adicionar o próprio usuário para teste (remova em produção se quiser)
         followingIds.push(user.id);
 
         const playingFriends: FriendPlaying[] = [];
@@ -50,38 +51,34 @@ export function FriendsListeningMobile(): JSX.Element | null {
             const friendDoc = await getDoc(doc(db, 'users', friendId));
             const friendData = friendDoc.data();
 
-            if (!friendData?.spotifyTokens) continue;
-            if (friendData.spotifyTokens.expiresAt < Date.now() - 300000)
-              continue;
+            // Verificar se tem currentlyPlaying no Firestore
+            if (!friendData?.currentlyPlaying?.isPlaying) continue;
 
-            const response = await fetch('/api/spotify/me/playing', {
-              headers: {
-                Authorization: `Bearer ${friendData.spotifyTokens.accessToken}`
+            // Verificar se a atualização é recente (últimos 5 minutos)
+            const updatedAt = friendData.currentlyPlaying.updatedAt || 0;
+            if (Date.now() - updatedAt > 300000) continue;
+
+            const track = friendData.currentlyPlaying.track;
+            if (!track) continue;
+
+            playingFriends.push({
+              id: friendId,
+              name: friendData.name,
+              username: friendData.username,
+              photoURL: friendData.photoURL,
+              track: {
+                name: track.name,
+                artist: track.artist,
+                image: track.image,
+                spotifyUrl: track.spotifyUrl || ''
               }
             });
-
-            if (response.ok) {
-              const data = await response.json();
-
-              if (data.isPlaying && data.track) {
-                playingFriends.push({
-                  id: friendId,
-                  name: friendData.name,
-                  username: friendData.username,
-                  photoURL: friendData.photoURL,
-                  track: {
-                    name: data.track.name,
-                    artist: data.track.artist,
-                    image: data.track.image
-                  }
-                });
-              }
-            }
           } catch {
             // Ignorar erros individuais
           }
 
-          if (playingFriends.length >= 10) break;
+          // Limitar a 5 amigos para performance
+          if (playingFriends.length >= 5) break;
         }
 
         setFriendsPlaying(playingFriends);
