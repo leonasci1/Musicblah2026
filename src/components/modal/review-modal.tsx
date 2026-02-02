@@ -11,6 +11,7 @@ type Album = {
   id: string;
   name: string;
   artist: string;
+  artistId?: string;
   image: string;
   year: string;
 };
@@ -111,6 +112,7 @@ export function ReviewModal({
                 id: album!.id,
                 name: album!.name,
                 artist: album!.artist,
+                artistId: album!.artistId,
                 image: album!.image,
                 year: album!.year || '----'
               }

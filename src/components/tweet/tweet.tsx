@@ -66,7 +66,7 @@ export const Tweet = forwardRef<HTMLElement, TweetProps>(
     const { open, openModal, closeModal } = useModal();
 
     // Early return apenas depois dos hooks
-    if (!tweetId) return <></>;
+    if (!tweetId || !tweetUserData) return <></>;
 
     const tweetLink = `/tweet/${tweetId}`;
     const userId = user?.id as string;
@@ -119,7 +119,11 @@ export const Tweet = forwardRef<HTMLElement, TweetProps>(
                         username={tweetUserData.username}
                         disableLink
                       />
-                      <TweetDate tweetLink={tweetLink} createdAt={createdAt} />
+                      <TweetDate
+                        tweetLink={tweetLink}
+                        createdAt={createdAt}
+                        disableLink
+                      />
                     </div>
                     <div className='translate-x-2'>
                       <TweetActions
@@ -203,7 +207,11 @@ export const Tweet = forwardRef<HTMLElement, TweetProps>(
                         username={tweetUserData.username}
                         disableLink
                       />
-                      <TweetDate tweetLink={tweetLink} createdAt={createdAt} />
+                      <TweetDate
+                        tweetLink={tweetLink}
+                        createdAt={createdAt}
+                        disableLink
+                      />
                     </div>
                     <div className='translate-x-2'>
                       <TweetActions
@@ -310,7 +318,12 @@ export const Tweet = forwardRef<HTMLElement, TweetProps>(
               </AnimatePresence>
               <div className='flex flex-col items-center gap-2'>
                 <UserTooltip avatar modal={modal} {...tweetUserData}>
-                  <UserAvatar src={photoURL} alt={name} username={username} />
+                  <UserAvatar
+                    src={photoURL}
+                    alt={name}
+                    username={username}
+                    disableLink
+                  />
                 </UserTooltip>
                 {parentTweet && (
                   <i className='hover-animation h-full w-0.5 bg-light-line-reply dark:bg-dark-line-reply' />
@@ -330,7 +343,11 @@ export const Tweet = forwardRef<HTMLElement, TweetProps>(
                     <UserTooltip modal={modal} {...tweetUserData}>
                       <UserUsername username={username} />
                     </UserTooltip>
-                    <TweetDate tweetLink={tweetLink} createdAt={createdAt} />
+                    <TweetDate
+                      tweetLink={tweetLink}
+                      createdAt={createdAt}
+                      disableLink
+                    />
                   </div>
                   <div className='px-4'>
                     {!modal && (

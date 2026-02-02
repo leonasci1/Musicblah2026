@@ -8,6 +8,7 @@ import { UserHomeAvatar } from '@components/user/user-home-avatar';
 import { UserDetails } from '@components/user/user-details';
 import { UserMusicStats } from '@components/user/user-music-stats';
 import { UserNav } from '@components/user/user-nav';
+import { NowPlayingCard } from '@components/user/now-playing-card';
 import { Button } from '@components/ui/button';
 import { Loading } from '@components/ui/loading';
 import { HeroIcon } from '@components/ui/hero-icon';
@@ -16,6 +17,7 @@ import { FollowButton } from '@components/ui/follow-button';
 import { variants } from '@components/user/user-header';
 import { UserEditProfile } from '@components/user/user-edit-profile';
 import { UserShare } from '@components/user/user-share';
+import { RequestVerificationButton } from '@components/user/request-verification-button';
 import type { LayoutProps } from './common-layout';
 
 export function UserHomeLayout({ children }: LayoutProps): JSX.Element {
@@ -71,7 +73,10 @@ export function UserHomeLayout({ children }: LayoutProps): JSX.Element {
               <div className='flex justify-between'>
                 <UserHomeAvatar profileData={profileData} />
                 {isOwner ? (
-                  <UserEditProfile />
+                  <div className='flex gap-2 self-start'>
+                    <RequestVerificationButton />
+                    <UserEditProfile />
+                  </div>
                 ) : (
                   <div className='flex gap-2 self-start'>
                     <UserShare username={userData.username} />
@@ -92,6 +97,11 @@ export function UserHomeLayout({ children }: LayoutProps): JSX.Element {
                 )}
               </div>
               <UserDetails {...userData} />
+
+              {/* Spotify Now Playing */}
+              <div className='mt-4'>
+                <NowPlayingCard userId={userData.id} isOwner={isOwner} />
+              </div>
             </div>
           </>
         )}

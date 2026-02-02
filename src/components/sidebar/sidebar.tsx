@@ -5,8 +5,6 @@ import { useModal } from '@lib/hooks/useModal';
 import { useUnreadNotifications } from '@lib/hooks/useNotifications';
 import { Modal } from '@components/modal/modal';
 import { Input } from '@components/input/input';
-import { CustomIcon } from '@components/ui/custom-icon';
-import { NextImage } from '@components/ui/next-image';
 import { BrandLogo } from '@components/common/brand-logo';
 import { Button } from '@components/ui/button';
 import { SidebarLink } from './sidebar-link';
@@ -55,6 +53,12 @@ const navLinks: Readonly<NavLink[]> = [
     canBeHidden: true
   },
   {
+    href: '/artists',
+    linkName: 'Artistas',
+    iconName: 'UserGroupIcon', // 👥 Artistas seguidos
+    canBeHidden: true
+  },
+  {
     href: '/lists',
     linkName: 'Playlists',
     iconName: 'QueueListIcon', // 📋 Lista de reprodução
@@ -63,10 +67,18 @@ const navLinks: Readonly<NavLink[]> = [
   }
 ];
 
+// IDs dos administradores
+const ADMIN_IDS = [
+  '6zKhNMo9djbcehg7IavUe31h2pv2',
+  'MqwowrLJgKdrPX8YNP4CxEWvXmz2'
+];
+
 export function Sidebar(): JSX.Element {
   const { user } = useAuth();
   const { isMobile } = useWindow();
   const unreadCount = useUnreadNotifications(user?.id);
+
+  const isAdmin = user?.id && ADMIN_IDS.includes(user.id);
 
   const { open, openModal, closeModal } = useModal();
 
@@ -122,6 +134,13 @@ export function Sidebar(): JSX.Element {
               linkName='Perfil'
               iconName='UserIcon'
             />
+            {isAdmin && (
+              <SidebarLink
+                href='/admin'
+                linkName='Admin'
+                iconName='ShieldCheckIcon'
+              />
+            )}
             {!isMobile && <MoreSettings />}
           </nav>
           <Button

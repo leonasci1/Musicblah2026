@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { fetchJSON } from '@lib/fetch';
 import { WindowContextProvider } from '@lib/context/window-context';
 import { Sidebar } from '@components/sidebar/sidebar';
+import { NowPlayingBar } from '@components/common/now-playing-bar';
 import type { DefaultToastOptions } from 'react-hot-toast';
 import type { LayoutProps } from './common-layout';
 
@@ -21,6 +22,7 @@ export function MainLayout({ children }: LayoutProps): JSX.Element {
       <WindowContextProvider>
         <Sidebar />
         <SWRConfig value={{ fetcher: fetchJSON }}>{children}</SWRConfig>
+        <NowPlayingBar />
       </WindowContextProvider>
       <Toaster
         position='bottom-center'

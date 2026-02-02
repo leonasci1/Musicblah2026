@@ -115,12 +115,23 @@ export function LyricModal({
     setManualMode(false);
 
     try {
-      const res = await fetch(
-        `/api/lyrics/search?artist=${encodeURIComponent(
+      // Tenta primeiro com Genius (melhor cobertura)
+      let res = await fetch(
+        `/api/lyrics/genius?artist=${encodeURIComponent(
           track.artist
         )}&track=${encodeURIComponent(track.name)}`
       );
-      const data = await res.json();
+      let data = await res.json();
+
+      // Se Genius não encontrou, tenta a API antiga
+      if (!data.lyrics) {
+        res = await fetch(
+          `/api/lyrics/search?artist=${encodeURIComponent(
+            track.artist
+          )}&track=${encodeURIComponent(track.name)}`
+        );
+        data = await res.json();
+      }
 
       if (data.lyrics) {
         // Dividir em linhas e filtrar linhas vazias
@@ -136,7 +147,14 @@ export function LyricModal({
           setManualMode(true);
         }
       } else {
-        setLyricsError('Letra não encontrada para esta música');
+        // Se tem link do Genius, mostra mensagem com link
+        if (data.geniusUrl) {
+          setLyricsError(
+            `Letra não disponível automaticamente. Veja no Genius: ${data.geniusUrl}`
+          );
+        } else {
+          setLyricsError('Letra não encontrada para esta música');
+        }
         setManualMode(true);
       }
     } catch {

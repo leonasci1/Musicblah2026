@@ -129,6 +129,7 @@ export default async function handler(
           id: album.id,
           name: album.name,
           artist: album.artists[0].name,
+          artistId: album.artists[0].id, // ID do artista para associar reviews
           image: album.images[1]?.url || album.images[0]?.url,
           year: album.release_date.split('-')[0],
           url: album.external_urls.spotify,

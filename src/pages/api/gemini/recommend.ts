@@ -3,7 +3,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import SpotifyWebApi from 'spotify-web-api-node';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// Tentando gemini-2.5-flash-lite (mais leve, pode ter quota separada)
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${
   GEMINI_API_KEY ?? ''
 }`;
@@ -24,7 +23,25 @@ type SpotifyTrack = {
 type GeminiResponse = {
   recommendations?: SpotifyTrack[];
   error?: string;
+  source?: string;
+  message?: string;
 };
+
+// CACHE simples em memória (reseta quando o servidor reinicia)
+// Guarda recomendações por 10 minutos para evitar quota exceeded
+const cache: Map<string, { data: SpotifyTrack[]; timestamp: number }> =
+  new Map();
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
+
+function getCacheKey(reviews: any[]): string {
+  // Cria uma chave baseada nos artistas das reviews
+  const artists = reviews
+    .map((r: any) => r.track?.artist || r.album?.artist || r.artistName)
+    .filter(Boolean)
+    .sort()
+    .join(',');
+  return artists || 'no-reviews';
+}
 
 // Helper para formatar duração
 function formatDuration(ms: number): string {
@@ -33,58 +50,23 @@ function formatDuration(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-// Buscar música no Spotify
-async function searchSpotifyTrack(
-  spotifyApi: SpotifyWebApi,
-  name: string,
-  artist: string,
-  reason: string
-): Promise<SpotifyTrack | null> {
-  try {
-    const searchQuery = `track:${name} artist:${artist}`;
-    const result = await spotifyApi.searchTracks(searchQuery, { limit: 1 });
-    const track = result.body.tracks?.items[0];
-
-    if (!track) {
-      // Tenta busca mais simples
-      const simpleResult = await spotifyApi.searchTracks(`${name} ${artist}`, {
-        limit: 1
-      });
-      const simpleTrack = simpleResult.body.tracks?.items[0];
-      if (!simpleTrack) return null;
-
-      return {
-        id: simpleTrack.id,
-        name: simpleTrack.name,
-        artist: simpleTrack.artists[0]?.name ?? artist,
-        artistId: simpleTrack.artists[0]?.id ?? '',
-        image: simpleTrack.album.images[0]?.url ?? '',
-        album: simpleTrack.album.name,
-        duration: formatDuration(simpleTrack.duration_ms),
-        previewUrl: simpleTrack.preview_url,
-        url: simpleTrack.external_urls?.spotify ?? '',
-        reason
-      };
-    }
-
-    return {
-      id: track.id,
-      name: track.name,
-      artist: track.artists[0]?.name ?? artist,
-      artistId: track.artists[0]?.id ?? '',
-      image: track.album.images[0]?.url ?? '',
-      album: track.album.name,
-      duration: formatDuration(track.duration_ms),
-      previewUrl: track.preview_url,
-      url: track.external_urls?.spotify ?? '',
-      reason
-    };
-  } catch {
-    return null;
-  }
+// Converter track do Spotify para nosso formato
+function formatSpotifyTrack(track: any, reason: string): SpotifyTrack {
+  return {
+    id: track.id,
+    name: track.name,
+    artist: track.artists[0]?.name ?? 'Desconhecido',
+    artistId: track.artists[0]?.id ?? '',
+    image: track.album?.images[0]?.url ?? '',
+    album: track.album?.name ?? '',
+    duration: formatDuration(track.duration_ms),
+    previewUrl: track.preview_url,
+    url: track.external_urls?.spotify ?? '',
+    reason
+  };
 }
 
-// Músicas brasileiras para fallback (variadas)
+// Músicas brasileiras para fallback
 const FALLBACK_QUERIES = [
   {
     name: 'Evidências',
@@ -96,17 +78,7 @@ const FALLBACK_QUERIES = [
     artist: 'Legião Urbana',
     reason: 'Rock BR essencial'
   },
-  {
-    name: 'Eduardo e Mônica',
-    artist: 'Legião Urbana',
-    reason: 'História musical'
-  },
   { name: 'Velha Infância', artist: 'Tribalistas', reason: 'MPB moderna' },
-  {
-    name: 'Amor I Love You',
-    artist: 'Marisa Monte',
-    reason: 'MPB sofisticada'
-  },
   { name: 'Anna Júlia', artist: 'Los Hermanos', reason: 'Indie brasileiro' },
   {
     name: 'Pais e Filhos',
@@ -114,42 +86,18 @@ const FALLBACK_QUERIES = [
     reason: 'Reflexão atemporal'
   },
   {
-    name: 'Primeiros Erros',
-    artist: 'Capital Inicial',
-    reason: 'Rock 80s brasileiro'
-  },
-  {
-    name: 'Encontros e Despedidas',
-    artist: 'Maria Rita',
-    reason: 'Voz marcante'
-  },
-  {
     name: 'Lanterna dos Afogados',
     artist: 'Os Paralamas do Sucesso',
     reason: 'Rock BR clássico'
   },
-  { name: 'Aquarela', artist: 'Toquinho', reason: 'Para todas idades' },
-  { name: 'Construção', artist: 'Chico Buarque', reason: 'Obra-prima MPB' },
-  { name: 'Águas de Março', artist: 'Elis Regina', reason: 'Bossa Nova' },
   { name: 'Oceano', artist: 'Djavan', reason: 'Sofisticação BR' },
-  { name: 'Sozinho', artist: 'Caetano Veloso', reason: 'Tropicália' },
   {
     name: 'Malandragem',
     artist: 'Cássia Eller',
     reason: 'Interpretação única'
   },
-  { name: 'Ainda Lembro', artist: 'Marisa Monte', reason: 'Emoção pura' },
-  {
-    name: 'Meu Erro',
-    artist: 'Os Paralamas do Sucesso',
-    reason: 'Pop rock BR'
-  },
   { name: 'Garota Nacional', artist: 'Skank', reason: 'Hit anos 90' },
-  { name: 'É Preciso Saber Viver', artist: 'Titãs', reason: 'Rock reflexivo' },
-  { name: 'Exagerado', artist: 'Cazuza', reason: 'Rock poético' },
-  { name: 'Como Nossos Pais', artist: 'Elis Regina', reason: 'MPB atemporal' },
-  { name: 'Menina Veneno', artist: 'Ritchie', reason: 'Pop 80s' },
-  { name: 'Mulher de Fases', artist: 'Raimundos', reason: 'Rock pesado BR' }
+  { name: 'Exagerado', artist: 'Cazuza', reason: 'Rock poético' }
 ];
 
 export default async function handler(
@@ -161,18 +109,36 @@ export default async function handler(
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { userReviews } = req.body;
 
-  // eslint-disable-next-line no-console, @typescript-eslint/no-unsafe-member-access
-  console.log(
-    '🎵 API RECOMMEND chamada - Reviews do usuário:',
-    userReviews?.length ?? 0
-  );
-  // eslint-disable-next-line no-console
-  console.log('🔑 GEMINI_API_KEY configurada:', !!GEMINI_API_KEY);
+  console.log('🎵 API RECOMMEND chamada - Reviews:', userReviews?.length ?? 0);
+  console.log('🔑 GEMINI_API_KEY:', !!GEMINI_API_KEY);
 
-  // Inicializar Spotify API
+  // Verificar cache primeiro - retorna 5 ALEATÓRIAS do cache
+  const cacheKey = getCacheKey(userReviews || []);
+  const cached = cache.get(cacheKey);
+
+  if (
+    cached &&
+    Date.now() - cached.timestamp < CACHE_DURATION &&
+    cached.data.length > 0
+  ) {
+    // Embaralha e pega 5 diferentes a cada vez
+    const shuffled = [...cached.data].sort(() => Math.random() - 0.5);
+    const randomSelection = shuffled.slice(0, 5);
+    console.log(
+      '📦 CACHE HIT! Retornando',
+      randomSelection.length,
+      'aleatórias de',
+      cached.data.length
+    );
+    return res.status(200).json({
+      recommendations: randomSelection,
+      source: 'cache',
+      message: '🤖 Descobertas personalizadas com IA'
+    });
+  }
+
   const spotifyApi = new SpotifyWebApi({
     clientId:
       process.env.SPOTIFY_CLIENT_ID ?? '5b8cd851163d46c5894d3e2de61063f6',
@@ -185,176 +151,229 @@ export default async function handler(
     const authData = await spotifyApi.clientCredentialsGrant();
     spotifyApi.setAccessToken(authData.body.access_token);
 
-    let suggestionsToSearch: Array<{
-      name: string;
-      artist: string;
-      reason: string;
-    }> = [];
+    let recommendations: SpotifyTrack[] = [];
+    let source = 'fallback';
 
-    // Tentar usar Gemini se tiver reviews e API key
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (GEMINI_API_KEY && userReviews && userReviews.length > 0) {
+    // Se tem reviews E tem API key do Gemini, usar IA para descobertas
+    if (userReviews && userReviews.length > 0 && GEMINI_API_KEY) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        // Preparar resumo das reviews com mais contexto
         const reviewsSummary = userReviews
-          .slice(0, 10)
+          .slice(0, 12)
           .map((r: any) => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const item = r.track || r.album;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            const itemName = item?.name || r.trackName || r.albumName;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            const itemArtist = item?.artist || r.artistName || 'Desconhecido';
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            const itemRating = r.rating || 3;
-            if (!itemName) return null;
-            return `- "${itemName}" por ${itemArtist} - Nota: ${itemRating}/5`;
+            const name = item?.name || r.trackName || r.albumName;
+            const artist = item?.artist || r.artistName;
+            const rating = r.rating || 3;
+            const comment = r.review || r.comment || '';
+            if (!name) return null;
+            return `- "${name}" de ${artist} → ${rating}/5 estrelas${
+              comment ? ` (comentou: "${comment.slice(0, 60)}")` : ''
+            }`;
           })
           .filter(Boolean)
           .join('\n');
 
-        // eslint-disable-next-line no-console
-        console.log('📝 Reviews summary:\n', reviewsSummary || '(vazio)');
+        // Separar por notas pra dar mais contexto
+        const loved = userReviews.filter((r: any) => (r.rating || 3) >= 4);
+        const disliked = userReviews.filter((r: any) => (r.rating || 3) <= 2);
 
-        if (reviewsSummary) {
-          const prompt = `Você é um especialista em música. Baseado nas avaliações do usuário, sugira 5 músicas.
+        const lovedArtists = [
+          ...new Set(
+            loved
+              .map(
+                (r: any) => r.track?.artist || r.album?.artist || r.artistName
+              )
+              .filter(Boolean)
+          )
+        ].slice(0, 5);
 
-Avaliações:
+        const dislikedArtists = [
+          ...new Set(
+            disliked
+              .map(
+                (r: any) => r.track?.artist || r.album?.artist || r.artistName
+              )
+              .filter(Boolean)
+          )
+        ].slice(0, 3);
+
+        console.log('❤️ Artistas amados:', lovedArtists);
+        console.log('👎 Artistas não curtidos:', dislikedArtists);
+
+        const prompt = `Você é um DJ e curador musical expert. Analise o gosto musical deste usuário e recomende 12 músicas que ele VAI AMAR mas provavelmente NÃO CONHECE ainda.
+
+📊 AVALIAÇÕES DO USUÁRIO:
 ${reviewsSummary}
 
-Responda APENAS JSON válido (sem markdown):
-{"suggestions":[{"name":"Nome","artist":"Artista","reason":"Motivo curto"}]}
+❤️ ARTISTAS FAVORITOS (nota 4-5): ${lovedArtists.join(', ') || 'Nenhum ainda'}
+👎 NÃO CURTIU (nota 1-2): ${dislikedArtists.join(', ') || 'Nenhum'}
 
-Regras:
-- Músicas DIFERENTES das avaliadas
-- Considere gênero e notas
-- Motivos em português, máximo 25 caracteres
-- Músicas reais e populares`;
+🎯 SUA MISSÃO:
+1. Analise os PADRÕES: gêneros, épocas, vibes, instrumentação
+2. Recomende músicas de ARTISTAS DIFERENTES dos que ele já conhece
+3. Busque DESCOBERTAS: músicas que expandam o gosto dele, não as óbvias
+4. Considere: artistas do mesmo gênero mas menos mainstream, colaborações, músicas de outros países com vibe similar
+5. EVITE completamente o estilo dos artistas que ele não curtiu
+6. VARIEDADE: misture gêneros, épocas e estilos diferentes
 
-          const response = await fetch(GEMINI_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.9, maxOutputTokens: 500 }
-            })
-          });
+EXEMPLOS DE BOAS RECOMENDAÇÕES:
+- Se curtiu Djavan → sugira Milton Nascimento, Rubel, Tim Bernardes
+- Se curtiu Coldplay → sugira Sigur Rós, Bon Iver, The National
+- Se curtiu Kendrick Lamar → sugira J. Cole, Denzel Curry, JID
+- Se curtiu Taylor Swift → sugira Phoebe Bridgers, Maggie Rogers, Gracie Abrams
 
-          // eslint-disable-next-line no-console
-          console.log('🤖 Gemini response status:', response.status);
+⚠️ REGRAS OBRIGATÓRIAS:
+- Músicas REAIS que existem no Spotify
+- NENHUMA música dos artistas já avaliados
+- 12 artistas DIFERENTES (não repita artista)
+- Reasons em português, máximo 40 caracteres
 
-          if (response.ok) {
-            const data = await response.json();
-            // eslint-disable-next-line no-console
-            console.log(
-              '🤖 Gemini raw response:',
-              JSON.stringify(data).slice(0, 500)
-            );
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            const textResponse =
-              data.candidates?.[0]?.content?.parts?.[0]?.text;
-            // eslint-disable-next-line no-console
-            console.log('🤖 Gemini text:', textResponse?.slice(0, 300));
-            if (textResponse) {
-              const cleaned = textResponse
-                .replace(/```json\n?/g, '')
-                .replace(/```\n?/g, '')
-                .trim();
-              // eslint-disable-next-line no-console
-              console.log('🤖 Cleaned JSON:', cleaned.slice(0, 300));
+Responda APENAS com JSON válido (sem markdown):
+{"suggestions":[
+  {"name":"Nome Exato da Música","artist":"Nome Exato do Artista","reason":"Porque combina"},
+  ...mais 11 músicas
+]}`;
+
+        console.log('🤖 Enviando prompt pro Gemini...');
+
+        const geminiResponse = await fetch(GEMINI_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 1.0, maxOutputTokens: 1500 }
+          })
+        });
+
+        console.log('🤖 Gemini status:', geminiResponse.status);
+
+        if (geminiResponse.ok) {
+          const geminiData = await geminiResponse.json();
+          const textResponse =
+            geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+          console.log('🤖 Gemini respondeu:', textResponse?.slice(0, 200));
+
+          if (textResponse) {
+            const cleaned = textResponse
+              .replace(/```json\n?/g, '')
+              .replace(/```\n?/g, '')
+              .trim();
+
+            try {
               const parsed = JSON.parse(cleaned);
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
               if (parsed.suggestions && Array.isArray(parsed.suggestions)) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                suggestionsToSearch = parsed.suggestions;
-                // eslint-disable-next-line no-console
                 console.log(
-                  '✅ Gemini sugestões parseadas:',
-                  suggestionsToSearch.length
+                  '✅ Gemini sugeriu',
+                  parsed.suggestions.length,
+                  'músicas'
                 );
+
+                // Buscar cada sugestão no Spotify (todas as 12)
+                for (const suggestion of parsed.suggestions.slice(0, 12)) {
+                  try {
+                    const searchQuery = `${suggestion.name} ${suggestion.artist}`;
+                    const result = await spotifyApi.searchTracks(searchQuery, {
+                      limit: 1
+                    });
+                    const track = result.body.tracks?.items[0];
+
+                    if (track) {
+                      recommendations.push(
+                        formatSpotifyTrack(
+                          track,
+                          suggestion.reason || 'Descoberta pra você'
+                        )
+                      );
+                      console.log(
+                        '  ✓ Encontrou:',
+                        track.name,
+                        '-',
+                        track.artists[0]?.name
+                      );
+                    } else {
+                      console.log('  ✗ Não encontrou:', suggestion.name);
+                    }
+                  } catch (e) {
+                    console.log('  ✗ Erro buscando:', suggestion.name);
+                  }
+                }
+
+                if (recommendations.length >= 3) {
+                  source = 'gemini';
+                  console.log(
+                    '✅ IA funcionou!',
+                    recommendations.length,
+                    'recomendações no total'
+                  );
+
+                  // Salvar TODAS no cache por 10 minutos
+                  cache.set(cacheKey, {
+                    data: recommendations,
+                    timestamp: Date.now()
+                  });
+                  console.log(
+                    '💾 Salvo',
+                    recommendations.length,
+                    'músicas no cache'
+                  );
+
+                  // Retornar só 5 aleatórias agora
+                  recommendations = [...recommendations]
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 5);
+                }
               }
+            } catch (parseError) {
+              console.log('❌ Erro parsing JSON do Gemini:', parseError);
             }
-          } else {
-            const errorText = await response.text();
-            // eslint-disable-next-line no-console
-            console.log('❌ Gemini error response:', errorText.slice(0, 500));
           }
+        } else {
+          const errorText = await geminiResponse.text();
+          console.log('❌ Gemini erro:', errorText.slice(0, 200));
         }
       } catch (geminiError) {
-        // eslint-disable-next-line no-console
-        console.log('⚠️ GEMINI FALHOU:', geminiError);
+        console.log('⚠️ Gemini falhou:', geminiError);
       }
     }
 
-    // Se não conseguiu do Gemini, usar fallback aleatório
-    if (suggestionsToSearch.length === 0) {
-      // eslint-disable-next-line no-console
-      console.log(
-        '📦 USANDO FALLBACK - Motivo: Gemini não retornou sugestões ou usuário sem reviews'
-      );
-      // Embaralhar e pegar 5 aleatórias
-      const shuffled = [...FALLBACK_QUERIES].sort(() => Math.random() - 0.5);
-      suggestionsToSearch = shuffled.slice(0, 5);
-    } else {
-      // eslint-disable-next-line no-console
-      console.log(
-        '🤖 IA GEMINI ATIVA! Sugestões personalizadas:',
-        suggestionsToSearch.map((s) => s.name)
-      );
-    }
+    // FALLBACK: Se IA não funcionou ou não tem reviews
+    if (recommendations.length < 3) {
+      console.log('📦 USANDO FALLBACK');
+      const shuffled = [...FALLBACK_QUERIES]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 5);
 
-    // Buscar cada sugestão no Spotify
-    // Marcar se veio da IA ou do fallback
-    const isAiPowered =
-      suggestionsToSearch.length > 0 &&
-      !FALLBACK_QUERIES.some((f) => f.name === suggestionsToSearch[0]?.name);
-
-    const spotifyResults: SpotifyTrack[] = [];
-    for (const suggestion of suggestionsToSearch.slice(0, 5)) {
-      const track = await searchSpotifyTrack(
-        spotifyApi,
-        suggestion.name,
-        suggestion.artist,
-        suggestion.reason
-      );
-      if (track) {
-        spotifyResults.push(track);
+      for (const item of shuffled) {
+        try {
+          const result = await spotifyApi.searchTracks(
+            `${item.name} ${item.artist}`,
+            { limit: 1 }
+          );
+          const track = result.body.tracks?.items[0];
+          if (track) {
+            recommendations.push(formatSpotifyTrack(track, item.reason));
+          }
+        } catch (e) {
+          console.log('Erro buscando fallback:', item.name);
+        }
       }
+      source = 'fallback';
     }
 
-    // Se não encontrou o suficiente no Spotify, tentar mais do fallback
-    if (spotifyResults.length < 3) {
-      const moreShuffled = [...FALLBACK_QUERIES].sort(
-        () => Math.random() - 0.5
-      );
-      for (const fallback of moreShuffled) {
-        if (spotifyResults.length >= 5) break;
-        if (spotifyResults.find((t) => t.name === fallback.name)) continue;
-
-        const track = await searchSpotifyTrack(
-          spotifyApi,
-          fallback.name,
-          fallback.artist,
-          fallback.reason
-        );
-        if (track) spotifyResults.push(track);
-      }
-    }
-
-    // eslint-disable-next-line no-console
-    console.log(
-      `✅ Retornando ${spotifyResults.length} tracks (IA: ${isAiPowered})`
-    );
+    const messages: Record<string, string> = {
+      gemini: '🤖 Descobertas personalizadas com IA',
+      fallback: '🎵 Descubra novas músicas (avalie mais para personalizar!)'
+    };
 
     res.status(200).json({
-      recommendations: spotifyResults,
-      source: isAiPowered ? 'gemini' : 'fallback',
-      message: isAiPowered
-        ? 'Recomendações personalizadas baseadas nas suas reviews'
-        : 'Descubra novas músicas (faça reviews para ter sugestões personalizadas)'
+      recommendations: recommendations.slice(0, 5),
+      source,
+      message: messages[source] || messages.fallback
     });
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error('Error in recommend API:', error);
     res.status(500).json({ error: 'Erro ao buscar recomendações' });
   }

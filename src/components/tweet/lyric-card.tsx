@@ -58,11 +58,13 @@ export function LyricCard({
         </div>
 
         {/* Track info */}
-        <a
-          href={spotifyUrl}
-          target='_blank'
-          rel='noopener noreferrer'
-          className='flex items-center gap-3 rounded-xl bg-black/20 p-2 transition-colors hover:bg-black/30'
+        <div
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.open(spotifyUrl, '_blank', 'noopener,noreferrer');
+          }}
+          className='flex cursor-pointer items-center gap-3 rounded-xl bg-black/20 p-2 transition-colors hover:bg-black/30'
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -80,7 +82,7 @@ export function LyricCard({
             </svg>
             <span>Play</span>
           </div>
-        </a>
+        </div>
       </div>
     </motion.div>
   );

@@ -1,3 +1,4 @@
+import { useRouter } from 'next/router';
 import { HeroIcon } from '@components/ui/hero-icon';
 import { useRef, useState } from 'react';
 
@@ -6,9 +7,16 @@ type TweetReviewProps = {
 };
 
 export function TweetReview({ tweet }: TweetReviewProps) {
+  const router = useRouter();
   const { album, track, rating, text } = tweet;
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const navigateToArtist = (e: React.MouseEvent, artistId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/artist/${artistId}`);
+  };
 
   const togglePlay = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -59,7 +67,16 @@ export function TweetReview({ tweet }: TweetReviewProps) {
               <h3 className='text-lg font-bold leading-tight text-light-primary transition-colors hover:text-main-accent dark:text-white'>
                 {album.name}
               </h3>
-              <p className='mt-1 text-sm text-gray-400'>{album.artist}</p>
+              {album.artistId ? (
+                <span
+                  onClick={(e) => navigateToArtist(e, album.artistId)}
+                  className='mt-1 block cursor-pointer text-sm text-gray-400 transition-colors hover:text-main-accent hover:underline'
+                >
+                  {album.artist}
+                </span>
+              ) : (
+                <p className='mt-1 text-sm text-gray-400'>{album.artist}</p>
+              )}
               <p className='mt-0.5 text-xs text-gray-500'>{album.year}</p>
             </div>
 
@@ -122,7 +139,16 @@ export function TweetReview({ tweet }: TweetReviewProps) {
                   </span>
                 )}
               </div>
-              <p className='mt-1 text-sm text-gray-400'>{track.artist}</p>
+              {track.artistId ? (
+                <span
+                  onClick={(e) => navigateToArtist(e, track.artistId)}
+                  className='mt-1 block cursor-pointer text-sm text-gray-400 transition-colors hover:text-main-accent hover:underline'
+                >
+                  {track.artist}
+                </span>
+              ) : (
+                <p className='mt-1 text-sm text-gray-400'>{track.artist}</p>
+              )}
               <p className='mt-0.5 text-xs text-gray-500'>{track.album}</p>
             </div>
 
