@@ -93,6 +93,10 @@ export function FriendsListening(): JSX.Element | null {
                 spotifyUrl: track.spotifyUrl
               }
             });
+            console.log(
+              '🎵 Adicionado ao array! Total:',
+              playingFriends.length
+            );
           } catch (e) {
             // Ignorar erros individuais
             console.warn(`Erro ao buscar música de ${friendId}:`, e);
@@ -102,6 +106,11 @@ export function FriendsListening(): JSX.Element | null {
           if (playingFriends.length >= 5) break;
         }
 
+        console.log(
+          '🎵 Total amigos ouvindo:',
+          playingFriends.length,
+          playingFriends
+        );
         setFriendsPlaying(playingFriends);
       } catch (error) {
         console.error('Erro ao buscar amigos ouvindo:', error);
