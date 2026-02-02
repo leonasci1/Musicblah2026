@@ -142,6 +142,7 @@ export function useSpotifyNowPlaying() {
 
         // Salvar no Firestore para que amigos possam ver
         if (user?.id && data.isPlaying && data.track) {
+          console.log('🎵 Salvando música no Firestore:', data.track.name);
           try {
             await updateDoc(doc(db, 'users', user.id), {
               currentlyPlaying: {
@@ -150,10 +151,12 @@ export function useSpotifyNowPlaying() {
                 updatedAt: Date.now()
               }
             });
+            console.log('✅ Música salva com sucesso!');
           } catch (e) {
-            console.warn('Erro ao salvar música atual:', e);
+            console.warn('❌ Erro ao salvar música atual:', e);
           }
         } else if (user?.id && !data.isPlaying) {
+          console.log('🎵 Limpando música (não está tocando)');
           // Limpar se não está tocando
           try {
             await updateDoc(doc(db, 'users', user.id), {

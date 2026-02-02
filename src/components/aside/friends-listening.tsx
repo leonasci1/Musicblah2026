@@ -52,17 +52,31 @@ export function FriendsListening(): JSX.Element | null {
         // 2. Para cada pessoa que sigo, verificar se tem música tocando
         const playingFriends: FriendPlaying[] = [];
 
+        console.log('🎵 FriendsListening: Buscando amigos...', followingIds);
+
         for (const friendId of followingIds) {
           try {
             const friendDoc = await getDoc(doc(db, 'users', friendId));
             const friendData = friendDoc.data();
 
+            console.log(`🎵 Amigo ${friendId}:`, {
+              hasCurrentlyPlaying: !!friendData?.currentlyPlaying,
+              isPlaying: friendData?.currentlyPlaying?.isPlaying,
+              track: friendData?.currentlyPlaying?.track?.name
+            });
+
             // Verificar se tem currentlyPlaying no Firestore
             if (!friendData?.currentlyPlaying?.isPlaying) continue;
 
-            // Verificar se a atualização é recente (últimos 2 minutos)
+            // Verificar se a atualização é recente (últimos 5 minutos)
             const updatedAt = friendData.currentlyPlaying.updatedAt || 0;
-            if (Date.now() - updatedAt > 120000) continue; // Mais de 2 min = provavelmente parou
+            const timeSinceUpdate = Date.now() - updatedAt;
+            console.log(
+              `🎵 Tempo desde atualização: ${Math.round(
+                timeSinceUpdate / 1000
+              )}s`
+            );
+            if (timeSinceUpdate > 300000) continue; // Mais de 5 min = provavelmente parou
 
             const track = friendData.currentlyPlaying.track;
             if (!track) continue;
