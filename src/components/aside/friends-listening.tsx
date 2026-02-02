@@ -59,14 +59,39 @@ export function FriendsListening(): JSX.Element | null {
 
             if (!friendData?.spotifyTokens) continue;
 
-            // Verificar se token não expirou (com margem de 5 min)
-            if (friendData.spotifyTokens.expiresAt < Date.now() - 300000)
-              continue;
+            let accessToken = friendData.spotifyTokens.accessToken;
+
+            // Verificar se token expirou
+            if (friendData.spotifyTokens.expiresAt < Date.now()) {
+              // Token expirado - tentar renovar
+              try {
+                const refreshResponse = await fetch(
+                  '/api/spotify/auth/refresh',
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      refresh_token: friendData.spotifyTokens.refreshToken,
+                      user_id: friendId
+                    })
+                  }
+                );
+
+                if (refreshResponse.ok) {
+                  const newTokenData = await refreshResponse.json();
+                  accessToken = newTokenData.access_token;
+                } else {
+                  continue; // Não conseguiu renovar, pular
+                }
+              } catch {
+                continue; // Erro ao renovar, pular
+              }
+            }
 
             // Buscar música atual via API
             const response = await fetch('/api/spotify/me/playing', {
               headers: {
-                Authorization: `Bearer ${friendData.spotifyTokens.accessToken}`
+                Authorization: `Bearer ${accessToken}`
               }
             });
 
