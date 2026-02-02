@@ -139,11 +139,39 @@ export function useSpotifyNowPlaying() {
       if (response.ok) {
         const data = await response.json();
         setNowPlaying(data);
+
+        // Salvar no Firestore para que amigos possam ver
+        if (user?.id && data.isPlaying && data.track) {
+          try {
+            await updateDoc(doc(db, 'users', user.id), {
+              currentlyPlaying: {
+                isPlaying: true,
+                track: data.track,
+                updatedAt: Date.now()
+              }
+            });
+          } catch (e) {
+            console.warn('Erro ao salvar música atual:', e);
+          }
+        } else if (user?.id && !data.isPlaying) {
+          // Limpar se não está tocando
+          try {
+            await updateDoc(doc(db, 'users', user.id), {
+              currentlyPlaying: {
+                isPlaying: false,
+                track: null,
+                updatedAt: Date.now()
+              }
+            });
+          } catch (e) {
+            console.warn('Erro ao limpar música atual:', e);
+          }
+        }
       }
     } catch (error) {
       console.error('Erro ao buscar música atual:', error);
     }
-  }, [tokens, refreshToken]);
+  }, [tokens, refreshToken, user?.id]);
 
   // Polling a cada 10 segundos quando conectado
   useEffect(() => {

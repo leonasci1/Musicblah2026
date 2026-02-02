@@ -49,7 +49,7 @@ export function FriendsListening(): JSX.Element | null {
         // Remova esta linha em produção!
         followingIds.push(user.id);
 
-        // 2. Para cada pessoa que sigo, verificar se tem spotifyTokens e buscar música
+        // 2. Para cada pessoa que sigo, verificar se tem música tocando
         const playingFriends: FriendPlaying[] = [];
 
         for (const friendId of followingIds) {
@@ -57,62 +57,28 @@ export function FriendsListening(): JSX.Element | null {
             const friendDoc = await getDoc(doc(db, 'users', friendId));
             const friendData = friendDoc.data();
 
-            if (!friendData?.spotifyTokens) continue;
+            // Verificar se tem currentlyPlaying no Firestore
+            if (!friendData?.currentlyPlaying?.isPlaying) continue;
 
-            let accessToken = friendData.spotifyTokens.accessToken;
+            // Verificar se a atualização é recente (últimos 2 minutos)
+            const updatedAt = friendData.currentlyPlaying.updatedAt || 0;
+            if (Date.now() - updatedAt > 120000) continue; // Mais de 2 min = provavelmente parou
 
-            // Verificar se token expirou
-            if (friendData.spotifyTokens.expiresAt < Date.now()) {
-              // Token expirado - tentar renovar
-              try {
-                const refreshResponse = await fetch(
-                  '/api/spotify/auth/refresh',
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      refresh_token: friendData.spotifyTokens.refreshToken,
-                      user_id: friendId
-                    })
-                  }
-                );
+            const track = friendData.currentlyPlaying.track;
+            if (!track) continue;
 
-                if (refreshResponse.ok) {
-                  const newTokenData = await refreshResponse.json();
-                  accessToken = newTokenData.access_token;
-                } else {
-                  continue; // Não conseguiu renovar, pular
-                }
-              } catch {
-                continue; // Erro ao renovar, pular
-              }
-            }
-
-            // Buscar música atual via API
-            const response = await fetch('/api/spotify/me/playing', {
-              headers: {
-                Authorization: `Bearer ${accessToken}`
+            playingFriends.push({
+              id: friendId,
+              name: friendData.name,
+              username: friendData.username,
+              photoURL: friendData.photoURL,
+              track: {
+                name: track.name,
+                artist: track.artist,
+                image: track.image,
+                spotifyUrl: track.spotifyUrl
               }
             });
-
-            if (response.ok) {
-              const data = await response.json();
-
-              if (data.isPlaying && data.track) {
-                playingFriends.push({
-                  id: friendId,
-                  name: friendData.name,
-                  username: friendData.username,
-                  photoURL: friendData.photoURL,
-                  track: {
-                    name: data.track.name,
-                    artist: data.track.artist,
-                    image: data.track.image,
-                    spotifyUrl: data.track.spotifyUrl
-                  }
-                });
-              }
-            }
           } catch (e) {
             // Ignorar erros individuais
             console.warn(`Erro ao buscar música de ${friendId}:`, e);
