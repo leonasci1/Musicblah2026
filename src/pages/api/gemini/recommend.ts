@@ -141,10 +141,16 @@ export default async function handler(
 
   const spotifyApi = new SpotifyWebApi({
     clientId:
-      process.env.SPOTIFY_CLIENT_ID ?? '5b8cd851163d46c5894d3e2de61063f6',
-    clientSecret:
-      process.env.SPOTIFY_CLIENT_SECRET ?? 'e17183e9f7834551845b85e96f7ec43b'
+      process.env.SPOTIFY_CLIENT_ID ||
+      process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID,
+    clientSecret: process.env.SPOTIFY_CLIENT_SECRET
   });
+
+  if (!spotifyApi.getClientId() || !process.env.SPOTIFY_CLIENT_SECRET) {
+    return res
+      .status(500)
+      .json({ error: 'Configurações do Spotify não encontradas' });
+  }
 
   try {
     // Autenticar no Spotify
